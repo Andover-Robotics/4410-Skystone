@@ -27,4 +27,6 @@ dependencies {
     stockImplementation 'org.openftc:hardware-stock:5.1'
     stockImplementation 'org.openftc:robotcore-stock:5.1'
     stockImplementation 'org.openftc:ftccommon-stock:5.1'
+
+    implementation 'org.openftc:easyopencv:1.1'
 }
