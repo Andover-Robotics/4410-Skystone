@@ -8,10 +8,16 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
+import org.firstinspires.ftc.teamcode.hardware.Intake;
 
-@TeleOp(name = "Field Centric Demo", group = "Experimental")
-public class FieldCentricDemo extends OpMode {
+import java.nio.charset.CoderResult;
+
+@TeleOp(name = "Normal Chassis Demo", group = "Experimental")
+public class NormalChassisDemo extends OpMode {
   private StrafingDriveTrain driveTrain;
+  private Servo foundMoveLeft, foundMoveRight;
+  private Intake intake;
   private BNO055IMU imu;
 
   @Override
@@ -29,9 +35,18 @@ public class FieldCentricDemo extends OpMode {
         motorFR,
         motorBL,
         motorBR,
-        this, 250, 2000);
-    imu = hardwareMap.get(BNO055IMU.class, "imu");
+        this,
+        50,
+        300
+    );
 
+    foundMoveLeft = hardwareMap.servo.get("foundationLeft");
+    foundMoveRight = hardwareMap.servo.get("foundationRight");
+    foundMoveRight.setDirection(Servo.Direction.REVERSE);
+
+    intake = new Intake(hardwareMap.dcMotor.get("intakeLeft"), hardwareMap.dcMotor.get("intakeRight"));
+
+    imu = hardwareMap.get(BNO055IMU.class, "imu");
     initImu();
   }
 
@@ -43,11 +58,24 @@ public class FieldCentricDemo extends OpMode {
     imu.initialize(params);
   }
 
-  private Coordinate driveVector;
-
   @Override
   public void loop() {
-    driveVector = Coordinate.fromXY(gamepad1.left_stick_x, -gamepad1.left_stick_y)
+    driveFieldCentric();
+
+    foundMoveRight.setPosition(0.33 - gamepad1.right_trigger * 0.33);
+    foundMoveLeft.setPosition(0.33 - gamepad1.right_trigger * 0.33);
+
+    double intakeSpeed = gamepad1.left_trigger;
+
+    if (gamepad1.left_bumper) {
+      intake.takeOut(intakeSpeed);
+    } else {
+      intake.takeIn(intakeSpeed);
+    }
+  }
+
+  private void driveFieldCentric() {
+    Coordinate driveVector = Coordinate.fromXY(gamepad1.left_stick_x, -gamepad1.left_stick_y)
         .rotate((int) -imu.getAngularOrientation().firstAngle);
 
     if (Math.abs(gamepad1.right_stick_x) > 0.1 && driveVector.getPolarDistance() < 0.1) {

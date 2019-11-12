@@ -54,6 +54,8 @@ dependencies {
     stockApi 'org.tensorflow:tensorflow-lite:0.0.0-nightly'
     stockApi 'org.openftc:tfod-ftc-repackaged:5.0'
 
+
+    implementation 'com.acmerobotics.dashboard:dashboard:0.3.4'
     /*
      * External
      */
