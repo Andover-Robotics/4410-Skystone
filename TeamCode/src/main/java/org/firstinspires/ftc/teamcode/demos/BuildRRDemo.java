@@ -1,12 +1,14 @@
 package org.firstinspires.ftc.teamcode.demos;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import kotlin.Unit;
 import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveBase;
 import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveREVOptimized;
 import org.firstinspires.ftc.teamcode.hardware.FoundationMover;
 
+@Autonomous(name = "BuildStart Road Runner Demo", group = "Experimental")
 public class BuildRRDemo extends LinearOpMode {
   private SampleMecanumDriveBase driveBase;
   private FoundationMover foundationMover;
@@ -25,7 +27,7 @@ public class BuildRRDemo extends LinearOpMode {
 
     driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
         .splineTo(new Pose2d(60, 30, Math.PI / 2))
-        .addMarker(() -> { foundationMover.armDown(); sleep(500); return Unit.INSTANCE; })
+        .addMarker(() -> { foundationMover.armDown(); sleep(700); return Unit.INSTANCE; })
         .back(30)
         .addMarker(() -> { foundationMover.armUp(); return Unit.INSTANCE; })
         .strafeRight(60)

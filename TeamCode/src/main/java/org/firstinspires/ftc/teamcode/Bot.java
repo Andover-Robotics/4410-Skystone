@@ -31,6 +31,7 @@ public class Bot {
   private Configuration mainConfig;
 
   private Bot(OpMode opMode) {
+    instance = this;
 
     initConfig();
 
@@ -50,8 +51,6 @@ public class Bot {
 
     hub1 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 1");
     hub2 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 2");
-
-    instance = this;
   }
 
   // Reduce literal repetition
@@ -61,7 +60,7 @@ public class Bot {
 
   private void initConfig() {
     try {
-      mainConfig = Configuration.fromPropertiesFile("/storage/primary/FIRST/config/main.properties");
+      mainConfig = Configuration.fromPropertiesFile("main.properties");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

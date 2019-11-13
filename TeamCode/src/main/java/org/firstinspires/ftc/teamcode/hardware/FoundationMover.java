@@ -1,17 +1,30 @@
 package org.firstinspires.ftc.teamcode.hardware;
 
 import com.qualcomm.robotcore.hardware.Servo;
+import org.firstinspires.ftc.teamcode.ConfigUser;
 
-public class FoundationMover {
+public class FoundationMover extends ConfigUser<FoundationMover.ConfigSchema> {
+
+  public static class ConfigSchema {
+    boolean leftReverse;
+    double scaleRangeMin, scaleRangeMax;
+  }
+
   private Servo armLeft, armRight;
 
   public FoundationMover(Servo armLeft, Servo armRight) {
+    super("foundationMover.properties", new ConfigSchema());
+
     this.armLeft = armLeft;
     this.armRight = armRight;
 
-    armLeft.setDirection(Servo.Direction.REVERSE);
-    armLeft.scaleRange(0.66, 1);
-    armRight.scaleRange(0.66, 1);
+    if (config.leftReverse)
+      armLeft.setDirection(Servo.Direction.REVERSE);
+    else
+      armRight.setDirection(Servo.Direction.REVERSE);
+
+    armLeft.scaleRange(config.scaleRangeMin, config.scaleRangeMax);
+    armRight.scaleRange(config.scaleRangeMin, config.scaleRangeMax);
   }
 
   public void armDown() {
