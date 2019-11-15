@@ -6,8 +6,8 @@ import org.firstinspires.ftc.teamcode.ConfigUser;
 public class FoundationMover extends ConfigUser<FoundationMover.ConfigSchema> {
 
   public static class ConfigSchema {
-    boolean leftReverse;
-    double scaleRangeMin, scaleRangeMax;
+    public boolean leftReverse;
+    public double scaleRangeMin, scaleRangeMax;
   }
 
   private Servo armLeft, armRight;
