@@ -5,6 +5,8 @@ import com.andoverrobotics.core.drivetrain.MecanumDrive;
 import com.andoverrobotics.core.drivetrain.StrafingDriveTrain;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveBase;
+import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveREVOptimized;
 import org.firstinspires.ftc.teamcode.hardware.Intake;
 import org.openftc.revextensions2.ExpansionHubEx;
 
@@ -24,7 +26,7 @@ public class Bot {
     return instance;
   }
 
-  public final StrafingDriveTrain driveTrain;
+  public final SampleMecanumDriveBase driveBase;
   public final Intake intake;
   public final ExpansionHubEx hub1, hub2;
 
@@ -36,15 +38,7 @@ public class Bot {
     initConfig();
 
     // Hardware Configurations
-    driveTrain = MecanumDrive.fromOctagonalMotors(
-        motor(opMode, "motorFL"),
-        motor(opMode, "motorFR"),
-        motor(opMode, "motorBL"),
-        motor(opMode, "motorBR"),
-        opMode,
-        mainConfig.getInt("ticksPerInch"),
-        mainConfig.getInt("ticksPer360")
-    );
+    driveBase = new SampleMecanumDriveREVOptimized(opMode.hardwareMap);
     intake = new Intake(
         motor(opMode, "intakeLeft"),
         motor(opMode, "intakeRight"));

@@ -29,4 +29,8 @@ public class Intake {
   public void takeOut(double power) {
     spin(-Math.abs(power));
   }
+
+  public void stop() {
+    spin(0);
+  }
 }
