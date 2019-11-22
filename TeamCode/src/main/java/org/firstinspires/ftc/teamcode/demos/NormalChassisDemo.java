@@ -11,8 +11,6 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.teamcode.hardware.Intake;
 
-import java.nio.charset.CoderResult;
-
 @TeleOp(name = "Normal Chassis Demo", group = "Experimental")
 public class NormalChassisDemo extends OpMode {
   private StrafingDriveTrain driveTrain;
@@ -62,16 +60,27 @@ public class NormalChassisDemo extends OpMode {
   public void loop() {
     driveFieldCentric();
 
-    foundMoveRight.setPosition(0.33 - gamepad1.right_trigger * 0.33);
-    foundMoveLeft.setPosition(0.33 - gamepad1.right_trigger * 0.33);
-
-    double intakeSpeed = gamepad1.left_trigger;
-
-    if (gamepad1.left_bumper) {
-      intake.takeOut(intakeSpeed);
+    // Foundation Movers
+    if (gamepad1.left_bumper || gamepad1.right_bumper) {
+      foundMoveLeft.setPosition(0);
+      foundMoveRight.setPosition(0);
     } else {
-      intake.takeIn(intakeSpeed);
+      foundMoveLeft.setPosition(0.33);
+      foundMoveRight.setPosition(0.33);
     }
+
+    // Intake & Outtake
+    double intakeSpeed = gamepad1.left_trigger > 0.1 ? gamepad1.left_trigger / 2 : 0;
+    double outtakeSpeed = gamepad1.right_trigger > 0.1 ? gamepad1.right_trigger / 2 : 0;
+
+    if (intakeSpeed > 0) {
+      intake.takeIn(intakeSpeed);
+    } else if (outtakeSpeed > 0) {
+      intake.takeOut(outtakeSpeed);
+    } else {
+      intake.stop();
+    }
+
   }
 
   private void driveFieldCentric() {
