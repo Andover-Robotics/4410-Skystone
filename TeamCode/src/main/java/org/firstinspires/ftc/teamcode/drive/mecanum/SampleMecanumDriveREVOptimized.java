@@ -26,7 +26,7 @@ public class SampleMecanumDriveREVOptimized extends SampleMecanumDriveBase {
     private ExpansionHubEx hub;
     private ExpansionHubMotor leftFront, leftRear, rightRear, rightFront;
     private List<ExpansionHubMotor> motors;
-    private BNO055IMU imu;
+    public BNO055IMU imu;
 
     public SampleMecanumDriveREVOptimized(HardwareMap hardwareMap) {
         super();

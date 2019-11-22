@@ -3,8 +3,10 @@ package org.firstinspires.ftc.teamcode;
 import com.andoverrobotics.core.config.Configuration;
 import com.andoverrobotics.core.drivetrain.MecanumDrive;
 import com.andoverrobotics.core.drivetrain.StrafingDriveTrain;
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveBase;
 import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveREVOptimized;
 import org.firstinspires.ftc.teamcode.hardware.Intake;
@@ -26,9 +28,10 @@ public class Bot {
     return instance;
   }
 
-  public final SampleMecanumDriveBase driveBase;
+  public final SampleMecanumDriveREVOptimized driveBase;
   public final Intake intake;
   public final ExpansionHubEx hub1, hub2;
+  public final BNO055IMU imu;
 
   private Configuration mainConfig;
 
@@ -39,6 +42,8 @@ public class Bot {
 
     // Hardware Configurations
     driveBase = new SampleMecanumDriveREVOptimized(opMode.hardwareMap);
+    imu = driveBase.imu;
+
     intake = new Intake(
         motor(opMode, "intakeLeft"),
         motor(opMode, "intakeRight"));
