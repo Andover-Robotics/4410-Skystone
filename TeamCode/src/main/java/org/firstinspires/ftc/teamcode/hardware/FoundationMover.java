@@ -28,11 +28,11 @@ public class FoundationMover extends ConfigUser<FoundationMover.ConfigSchema> {
   }
 
   public void armDown() {
-    setPositions(1);
+    setPositions(0);
   }
 
   public void armUp() {
-    setPositions(0);
+    setPositions(1);
   }
 
   private void setPositions(int pos) {

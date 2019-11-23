@@ -6,9 +6,8 @@ import com.andoverrobotics.core.drivetrain.StrafingDriveTrain;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveBase;
-import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveREVOptimized;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import org.firstinspires.ftc.teamcode.hardware.FoundationMover;
 import org.firstinspires.ftc.teamcode.hardware.Intake;
 import org.openftc.revextensions2.ExpansionHubEx;
 
@@ -28,8 +27,9 @@ public class Bot {
     return instance;
   }
 
-  public final SampleMecanumDriveREVOptimized driveBase;
+  public final StrafingDriveTrain driveTrain;
   public final Intake intake;
+  public final FoundationMover foundationMover;
   public final ExpansionHubEx hub1, hub2;
   public final BNO055IMU imu;
 
@@ -40,16 +40,39 @@ public class Bot {
 
     initConfig();
 
-    // Hardware Configurations
-    driveBase = new SampleMecanumDriveREVOptimized(opMode.hardwareMap);
-    imu = driveBase.imu;
+    DcMotor motorFR = opMode.hardwareMap.dcMotor.get("motorFR");
+    DcMotor motorBR = opMode.hardwareMap.dcMotor.get("motorBR");
+    DcMotor motorFL = opMode.hardwareMap.dcMotor.get("motorFL");
+    DcMotor motorBL = opMode.hardwareMap.dcMotor.get("motorBL");
+
+    motorFL.setDirection(DcMotorSimple.Direction.REVERSE);
+    motorBL.setDirection(DcMotorSimple.Direction.REVERSE);
+
+    driveTrain = MecanumDrive.fromOctagonalMotors(
+        motorFL,
+        motorFR,
+        motorBL,
+        motorBR,
+        opMode,
+        50,
+        300
+    );
 
     intake = new Intake(
         motor(opMode, "intakeLeft"),
         motor(opMode, "intakeRight"));
 
+    foundationMover = new FoundationMover(
+        opMode.hardwareMap.servo.get("foundationLeft"),
+        opMode.hardwareMap.servo.get("foundationRight"));
+
     hub1 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 1");
     hub2 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 2");
+
+    imu = opMode.hardwareMap.get(BNO055IMU.class, "imu");
+    BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+    parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
+    imu.initialize(parameters);
   }
 
   // Reduce literal repetition
