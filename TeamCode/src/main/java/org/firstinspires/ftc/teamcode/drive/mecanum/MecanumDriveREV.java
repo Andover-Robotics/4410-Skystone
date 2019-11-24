@@ -16,12 +16,12 @@ import static org.firstinspires.ftc.teamcode.drive.DriveConstants.*;
  * Simple mecanum drive hardware implementation for REV hardware. If your hardware configuration
  * satisfies the requirements, SampleMecanumDriveREVOptimized is highly recommended.
  */
-public class SampleMecanumDriveREV extends SampleMecanumDriveBase {
+public class MecanumDriveREV extends MecanumDriveBase {
     private DcMotorEx leftFront, leftRear, rightRear, rightFront;
     private List<DcMotorEx> motors;
     private BNO055IMU imu;
 
-    public SampleMecanumDriveREV(HardwareMap hardwareMap) {
+    public MecanumDriveREV(HardwareMap hardwareMap) {
         super();
 
         LynxModuleUtil.ensureMinimumFirmwareVersion(hardwareMap);

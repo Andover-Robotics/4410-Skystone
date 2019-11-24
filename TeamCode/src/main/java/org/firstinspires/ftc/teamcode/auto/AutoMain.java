@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.demos;
+package org.firstinspires.ftc.teamcode.auto;
 
 import android.util.Pair;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
@@ -19,22 +19,17 @@ import java.util.function.Function;
 
 import static org.firstinspires.ftc.teamcode.util.AllianceColor.*;
 
-public class GetSkystoneDemo extends LinearOpMode {
+public abstract class AutoMain extends LinearOpMode {
   private static final int TILE_SIZE = 24, SKYSTONE_LENGTH = 8;
 
   private CVSkystoneDetector detector;
   private Bot bot;
-  private Jack jack;
   private MecanumDriveBase driveBase;
 
   private AllianceColor alliance;
   private boolean isExperimental = false;
 
-  public void runOpMode() {
-    runOpMode(RED);
-  }
-
-  public void runOpMode(AllianceColor alliance) {
+  public void runForColor(AllianceColor alliance) {
     this.alliance = alliance;
     initFields();
     adjustCvWindowWhileWaitForStart();
@@ -157,7 +152,7 @@ public class GetSkystoneDemo extends LinearOpMode {
     detector.open();
 
     driveBase = new MecanumDriveREVOptimized(hardwareMap);
-    jack = new Jack(hardwareMap.dcMotor.get("jackLeft"), hardwareMap.dcMotor.get("jackRight"));
+    //jack = new Jack(hardwareMap.dcMotor.get("jackLeft"), hardwareMap.dcMotor.get("jackRight"));
   }
 
   private void strafeHorizontally(boolean left, double inches) {

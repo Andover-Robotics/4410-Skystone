@@ -6,20 +6,20 @@ import com.acmerobotics.roadrunner.trajectory.BaseTrajectoryBuilder;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveBase;
-import org.firstinspires.ftc.teamcode.drive.mecanum.SampleMecanumDriveREVOptimized;
+import org.firstinspires.ftc.teamcode.drive.mecanum.MecanumDriveBase;
+import org.firstinspires.ftc.teamcode.drive.mecanum.MecanumDriveREVOptimized;
 import org.firstinspires.ftc.teamcode.hardware.FoundationMover;
 
 import java.util.function.Function;
 
 @Autonomous(name = "BuildStart Road Runner Demo", group = "Experimental")
 public class BuildRRDemo extends LinearOpMode {
-  private SampleMecanumDriveBase driveBase;
+  private MecanumDriveBase driveBase;
   private FoundationMover foundationMover;
 
   @Override
   public void runOpMode() {
-    driveBase = new SampleMecanumDriveREVOptimized(hardwareMap);
+    driveBase = new MecanumDriveREVOptimized(hardwareMap);
     foundationMover = new FoundationMover(
         hardwareMap.servo.get("foundationLeft"),
         hardwareMap.servo.get("foundationRight")

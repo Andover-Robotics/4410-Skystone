@@ -32,7 +32,7 @@ import static org.firstinspires.ftc.teamcode.drive.DriveConstants.*;
  * handled in subclasses.
  */
 @Config
-public abstract class SampleMecanumDriveBase extends MecanumDrive {
+public abstract class MecanumDriveBase extends MecanumDrive {
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(0, 0, 0);
     public static PIDCoefficients HEADING_PID = new PIDCoefficients(0, 0, 0);
 
@@ -58,7 +58,7 @@ public abstract class SampleMecanumDriveBase extends MecanumDrive {
     private List<Double> lastWheelPositions;
     private double lastTimestamp;
 
-    public SampleMecanumDriveBase() {
+    public MecanumDriveBase() {
         super(kV, kA, kStatic, TRACK_WIDTH);
 
         dashboard = FtcDashboard.getInstance();

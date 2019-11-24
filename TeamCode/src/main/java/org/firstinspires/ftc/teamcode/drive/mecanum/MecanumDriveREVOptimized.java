@@ -22,13 +22,13 @@ import static org.firstinspires.ftc.teamcode.drive.DriveConstants.*;
  * Optimized mecanum drive implementation for REV ExHs. The time savings may significantly improve
  * trajectory following performance with moderate additional complexity.
  */
-public class SampleMecanumDriveREVOptimized extends SampleMecanumDriveBase {
+public class MecanumDriveREVOptimized extends MecanumDriveBase {
     private ExpansionHubEx hub;
     private ExpansionHubMotor leftFront, leftRear, rightRear, rightFront;
     private List<ExpansionHubMotor> motors;
     public BNO055IMU imu;
 
-    public SampleMecanumDriveREVOptimized(HardwareMap hardwareMap) {
+    public MecanumDriveREVOptimized(HardwareMap hardwareMap) {
         super();
 
         LynxModuleUtil.ensureMinimumFirmwareVersion(hardwareMap);

@@ -30,6 +30,11 @@ public class TeleOpMain extends OpMode {
     controlJack();
 
     telemetry.addData("cycle period", "%d ms", System.currentTimeMillis() - startMillis);
+
+    if (gamepad1.right_stick_button) {
+      // Reset field centric (set current heading to human heading)
+      bot.initImu(this);
+    }
   }
 
   private void controlJack() {

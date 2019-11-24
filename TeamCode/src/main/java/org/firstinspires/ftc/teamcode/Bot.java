@@ -31,7 +31,7 @@ public class Bot {
   public final Intake intake;
   public final FoundationMover foundationMover;
   public final ExpansionHubEx hub1, hub2;
-  public final BNO055IMU imu;
+  public BNO055IMU imu;
 
   private Configuration mainConfig;
 
@@ -69,6 +69,10 @@ public class Bot {
     hub1 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 1");
     hub2 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 2");
 
+    initImu(opMode);
+  }
+
+  public void initImu(OpMode opMode) {
     imu = opMode.hardwareMap.get(BNO055IMU.class, "imu");
     BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
     parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
