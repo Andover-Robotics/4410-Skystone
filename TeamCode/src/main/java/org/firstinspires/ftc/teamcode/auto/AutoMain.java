@@ -6,18 +6,17 @@ import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.BaseTrajectoryBuilder;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
+import com.andoverrobotics.core.config.Configuration;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.Bot;
-import org.firstinspires.ftc.teamcode.auto.CVSkystoneDetector;
-import org.firstinspires.ftc.teamcode.auto.StonePosition;
 import org.firstinspires.ftc.teamcode.drive.mecanum.MecanumDriveBase;
 import org.firstinspires.ftc.teamcode.drive.mecanum.MecanumDriveREVOptimized;
-import org.firstinspires.ftc.teamcode.hardware.Jack;
 import org.firstinspires.ftc.teamcode.util.AllianceColor;
 
+import java.io.IOException;
 import java.util.function.Function;
 
-import static org.firstinspires.ftc.teamcode.util.AllianceColor.*;
+import static org.firstinspires.ftc.teamcode.util.AllianceColor.RED;
 
 public abstract class AutoMain extends LinearOpMode {
   private static final int TILE_SIZE = 24, SKYSTONE_LENGTH = 8;
@@ -28,13 +27,15 @@ public abstract class AutoMain extends LinearOpMode {
 
   private AllianceColor alliance;
   private boolean isExperimental = false;
+  private Configuration config;
 
   public void runForColor(AllianceColor alliance) {
     this.alliance = alliance;
     initFields();
     adjustCvWindowWhileWaitForStart();
+    if (isStopRequested()) return;
 
-    driveBase.setPoseEstimate(allianceSpecificPoseFromRed(new Pose2d(-36, -63, Math.PI / 2)));
+    driveBase.setPoseEstimate(allianceSpecificPoseFromRed(new Pose2d(-33, -63, Math.PI / 2)));
 
     Pair<StonePosition, Double> result = detector.estimatedSkystonePosition();
     telemetry.addData("position", result.first);
@@ -67,11 +68,10 @@ public abstract class AutoMain extends LinearOpMode {
 
     driveBase.followTrajectorySync(navToOuterSkystoneTrajectory(result.first));
 
-
     // intake while moving forward
-    bot.intake.takeIn(0.6);
-    drive(t -> t.back(6));
-    sleep(400);
+    bot.intake.takeIn(config.getDouble("skystoneIntakePower"));
+    drive(t -> t.back(7));
+    sleep(500);
     // TODO attach encoders to intake motors so that we can detect a stall
     bot.intake.stop();
 
@@ -95,13 +95,16 @@ public abstract class AutoMain extends LinearOpMode {
       drive(it -> it.splineTo(allianceSpecificPoseFromRed(new Pose2d(0, -36, Math.PI/2))));
 
     } else {
-      drive(t -> t.splineTo(new Pose2d(20, alliance == RED ? -40 : 40, Math.PI)));
-      bot.intake.takeOut(0.6);
-      sleep(2000);
+      drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(20, -40))));
+      driveBase.turnSync(Math.PI);
+
+      bot.intake.takeOut(0.7);
+      sleep(600);
       bot.intake.stop();
+
       drive(t -> t
-          .splineTo(new Pose2d(20, alliance == RED ? -40 : 40, alliance == RED ? Math.PI/2 : -Math.PI/2))
-          .strafeTo(new Vector2d(0, alliance == RED ? -36 : 36)));
+          .splineTo(allianceSpecificPoseFromRed(new Pose2d(20, -40, Math.PI/2)))
+          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-5, -42))));
     }
   }
 
@@ -153,6 +156,11 @@ public abstract class AutoMain extends LinearOpMode {
 
     driveBase = new MecanumDriveREVOptimized(hardwareMap);
     //jack = new Jack(hardwareMap.dcMotor.get("jackLeft"), hardwareMap.dcMotor.get("jackRight"));
+    try {
+      config = Configuration.fromPropertiesFile("auto.properties");
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   private void strafeHorizontally(boolean left, double inches) {
@@ -170,13 +178,23 @@ public abstract class AutoMain extends LinearOpMode {
   }
 
   private Trajectory navToOuterSkystoneTrajectory(StonePosition position) {
-    int xBeforeIntake = -50 + SKYSTONE_LENGTH * position.offsetLeft;
+    double baseSkystoneXOffset = config.getDouble("baseSkystoneXOffset");
+    double apparentSkystoneWidth = config.getDouble("apparentSkystoneWidth");
+
+    double xBeforeIntake = -baseSkystoneXOffset - apparentSkystoneWidth *
+            (alliance == AllianceColor.RED ? position.offsetRight() : position.offsetLeft);
+
+
+    telemetry.addData("xBeforeIntake", xBeforeIntake);
+    telemetry.update();
 
     return driveBase.trajectoryBuilder()
         .splineTo(allianceSpecificPoseFromRed(new Pose2d(xBeforeIntake, -35, 0)))
-        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(xBeforeIntake, -22)))
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(xBeforeIntake, -(config.getDouble("quarryY")))))
         .build();
   }
+
+
 
   private Pose2d allianceSpecificPoseFromRed(Pose2d redPose) {
     return new Pose2d(

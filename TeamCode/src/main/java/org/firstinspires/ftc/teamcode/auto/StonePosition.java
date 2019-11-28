@@ -10,4 +10,8 @@ public enum StonePosition {
   StonePosition(int posLeft) {
     this.offsetLeft = posLeft;
   }
+
+  public int offsetRight() {
+    return 2 - offsetLeft;
+  }
 }
