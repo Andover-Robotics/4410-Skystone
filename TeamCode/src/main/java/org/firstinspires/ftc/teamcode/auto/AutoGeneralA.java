@@ -18,20 +18,19 @@ import java.util.function.Function;
 
 import static org.firstinspires.ftc.teamcode.util.AllianceColor.RED;
 
-public abstract class AutoMain extends LinearOpMode {
-  private static final int TILE_SIZE = 24, SKYSTONE_LENGTH = 8;
+public abstract class AutoGeneralA extends SkystoneAuto {
 
   private CVSkystoneDetector detector;
-  private Bot bot;
-  private MecanumDriveBase driveBase;
 
-  private AllianceColor alliance;
   private boolean isExperimental = false;
   private Configuration config;
 
   public void runForColor(AllianceColor alliance) {
     this.alliance = alliance;
     initFields();
+    initCV();
+    initConfig();
+
     adjustCvWindowWhileWaitForStart();
     if (isStopRequested()) return;
 
@@ -72,7 +71,6 @@ public abstract class AutoMain extends LinearOpMode {
     bot.intake.takeIn(config.getDouble("skystoneIntakePower"));
     drive(t -> t.back(7));
     sleep(500);
-    // TODO attach encoders to intake motors so that we can detect a stall
     bot.intake.stop();
 
     // Congrats! You should theoretically have a Skystone.
@@ -149,13 +147,12 @@ public abstract class AutoMain extends LinearOpMode {
     telemetry.addData("Window Y", detector.config.leftStoneMidY);
   }
 
-  private void initFields() {
-    bot = Bot.getInstance(this);
+  private void initCV() {
     detector = new CVSkystoneDetector(hardwareMap);
     detector.open();
+  }
 
-    driveBase = new MecanumDriveREVOptimized(hardwareMap);
-    //jack = new Jack(hardwareMap.dcMotor.get("jackLeft"), hardwareMap.dcMotor.get("jackRight"));
+  private void initConfig() {
     try {
       config = Configuration.fromPropertiesFile("auto.properties");
     } catch (IOException e) {
@@ -192,19 +189,5 @@ public abstract class AutoMain extends LinearOpMode {
         .splineTo(allianceSpecificPoseFromRed(new Pose2d(xBeforeIntake, -35, 0)))
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(xBeforeIntake, -(config.getDouble("quarryY")))))
         .build();
-  }
-
-
-
-  private Pose2d allianceSpecificPoseFromRed(Pose2d redPose) {
-    return new Pose2d(
-        allianceSpecificPositionFromRed(redPose.vec()),
-        allianceSpecificHeadingFromRed(redPose.getHeading()));
-  }
-  private Vector2d allianceSpecificPositionFromRed(Vector2d redPos) {
-    return alliance == RED ? redPos : new Vector2d(redPos.getX(), -redPos.getY());
-  }
-  private double allianceSpecificHeadingFromRed(double redHeading) {
-    return alliance == RED ? redHeading : -redHeading;
   }
 }

@@ -5,19 +5,16 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Bot;
-import org.firstinspires.ftc.teamcode.hardware.Jack;
+import org.openftc.revextensions2.ExpansionHubEx;
 
 @TeleOp(name = "4410-2020 TeleOp", group = "Competition")
 public class TeleOpMain extends OpMode {
   private Bot bot;
-  private Jack jack;
 
   @Override
   public void init() {
     bot = Bot.getInstance(this);
-
-    // Temporary addition for scrimmage
-    jack = new Jack(hardwareMap.dcMotor.get("jackLeft"), hardwareMap.dcMotor.get("jackRight"));
+    bot.slideSystem.zeroLifts();
   }
 
   @Override
@@ -27,23 +24,19 @@ public class TeleOpMain extends OpMode {
     driveFieldCentric();
     controlFoundationMovers();
     controlIntake();
-    controlJack();
+
+    ControlState.runLoop(this);
+    ControlState.updateStage(this);
 
     telemetry.addData("cycle period", "%d ms", System.currentTimeMillis() - startMillis);
+    telemetry.addData("current control state", ControlState.currentStage);
+    telemetry.addData("current draw 1", bot.hub1.getTotalModuleCurrentDraw(ExpansionHubEx.CurrentDrawUnits.AMPS));
+    telemetry.addData("current draw 2", bot.hub2.getTotalModuleCurrentDraw(ExpansionHubEx.CurrentDrawUnits.AMPS));
+
 
     if (gamepad1.right_stick_button) {
       // Reset field centric (set current heading to human heading)
       bot.initImu(this);
-    }
-  }
-
-  private void controlJack() {
-    if (gamepad1.dpad_down) {
-      jack.setPower(0.6);
-    } else if (gamepad1.dpad_up) {
-      jack.setPower(-0.6);
-    } else {
-      jack.setPower(0);
     }
   }
 
