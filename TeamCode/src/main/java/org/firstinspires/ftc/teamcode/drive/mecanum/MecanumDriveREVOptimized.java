@@ -33,7 +33,7 @@ public class MecanumDriveREVOptimized extends MecanumDriveBase {
 
         LynxModuleUtil.ensureMinimumFirmwareVersion(hardwareMap);
 
-        hub = hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 2");
+        hub = hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 1");
 
         imu = hardwareMap.get(BNO055IMU.class, "imu");
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();

@@ -14,13 +14,13 @@ public abstract class AutoGeneralD extends SkystoneAuto {
 
     // Moves forward
     driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
-        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-33, -55)))
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-33, -35)))
         .build());
 
     // Turns towards SkyBridge and parks under it
     driveBase.turnSync(allianceSpecificHeadingFromRed(-Math.PI / 2));
     driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
-        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(5, -40)))
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-5, -33)))
         .build());
   }
 

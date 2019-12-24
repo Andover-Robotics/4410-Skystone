@@ -39,7 +39,7 @@ public class Bot {
   public final ExpansionHubEx hub1, hub2;
   public BNO055IMU imu;
 
-  private Configuration mainConfig;
+  public Configuration mainConfig;
 
   private Bot(OpMode opMode) {
     instance = this;

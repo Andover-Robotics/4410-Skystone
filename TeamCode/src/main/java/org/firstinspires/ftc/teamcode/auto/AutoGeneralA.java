@@ -21,8 +21,6 @@ import static org.firstinspires.ftc.teamcode.util.AllianceColor.RED;
 public abstract class AutoGeneralA extends SkystoneAuto {
 
   private CVSkystoneDetector detector;
-
-  private boolean isExperimental = false;
   private Configuration config;
 
   public void runForColor(AllianceColor alliance) {
@@ -35,6 +33,10 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     if (isStopRequested()) return;
 
     driveBase.setPoseEstimate(allianceSpecificPoseFromRed(new Pose2d(-33, -63, Math.PI / 2)));
+
+    // Align phone with target
+    drive(it -> it.forward(8));
+    driveBase.turnSync(-Math.PI / 2);
 
     Pair<StonePosition, Double> result = detector.estimatedSkystonePosition();
     telemetry.addData("position", result.first);
@@ -76,34 +78,16 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     // Congrats! You should theoretically have a Skystone.
     strafeHorizontally(false, 22);
 
-    if (isExperimental) {
-      drive(it -> it
-          .splineTo(allianceSpecificPoseFromRed(new Pose2d(-12, -38, 0)))
-          .splineTo(allianceSpecificPoseFromRed(new Pose2d(50, -34, Math.PI/2)))
-          .forward(5));
+    drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(20, -40))));
+    driveBase.turnSync(Math.PI);
 
-      bot.foundationMover.armDown();
-      sleep(2000);
+    bot.intake.takeOut(0.7);
+    sleep(600);
+    bot.intake.stop();
 
-      drive(it -> it.lineTo(allianceSpecificPositionFromRed(new Vector2d(53, -63))));
-
-      bot.foundationMover.armUp();
-      sleep(2000);
-
-      drive(it -> it.splineTo(allianceSpecificPoseFromRed(new Pose2d(0, -36, Math.PI/2))));
-
-    } else {
-      drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(20, -40))));
-      driveBase.turnSync(Math.PI);
-
-      bot.intake.takeOut(0.7);
-      sleep(600);
-      bot.intake.stop();
-
-      drive(t -> t
-          .splineTo(allianceSpecificPoseFromRed(new Pose2d(20, -40, Math.PI/2)))
-          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-5, -42))));
-    }
+    drive(t -> t
+        .splineTo(allianceSpecificPoseFromRed(new Pose2d(20, -40, Math.PI/2)))
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-5, -42))));
   }
 
   private void adjustCvWindowWhileWaitForStart() {
@@ -112,10 +96,6 @@ public abstract class AutoGeneralA extends SkystoneAuto {
       idle();
 
       sleep(200);
-      if (gamepad1.x) {
-        isExperimental = true;
-        telemetry.addLine("we are experimental");
-      }
       telemetry.update();
     }
   }
@@ -169,11 +149,6 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     }
   }
 
-  // To prevent literal repetition in runOpMode
-  private void drive(Function<TrajectoryBuilder, BaseTrajectoryBuilder> trajectory) {
-    driveBase.followTrajectorySync(trajectory.apply(driveBase.trajectoryBuilder()).build());
-  }
-
   private Trajectory navToOuterSkystoneTrajectory(StonePosition position) {
     double baseSkystoneXOffset = config.getDouble("baseSkystoneXOffset");
     double apparentSkystoneWidth = config.getDouble("apparentSkystoneWidth");
@@ -186,7 +161,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     telemetry.update();
 
     return driveBase.trajectoryBuilder()
-        .splineTo(allianceSpecificPoseFromRed(new Pose2d(xBeforeIntake, -35, 0)))
+        .splineTo(allianceSpecificPoseFromRed(new Pose2d(xBeforeIntake, -38, 0.5)))
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(xBeforeIntake, -(config.getDouble("quarryY")))))
         .build();
   }

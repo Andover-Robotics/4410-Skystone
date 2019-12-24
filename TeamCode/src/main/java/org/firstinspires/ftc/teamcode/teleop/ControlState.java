@@ -15,36 +15,45 @@ public class ControlState {
     PICKUP((gamepad, bot) -> {
 
     }, s -> {
-    }, s -> false, Color.YELLOW),
+    }, s -> s.a, Color.YELLOW),
 
     DELIVERY((gamepad, bot) -> {
 
     }, s -> {
-    }, s -> false, 0xFFFF8000 /* orange */),
+    }, s -> s.b, 0xFFFF8000 /* orange */),
 
     STACKING((gamepad, bot) -> {
 
     }, s -> {
-    }, s -> false, Color.MAGENTA),
+    }, s -> s.y, Color.MAGENTA),
 
     RETURN((gamepad, bot) -> {
 
     }, s -> {
-    }, s -> false, Color.CYAN),
+    }, s -> s.x, Color.CYAN),
 
     MANUAL((gamepad, bot) -> {
+
       // left y: lift
       if (Math.abs(gamepad.left_stick_y) > 0.1) {
         bot.slideSystem.setLiftPower(-gamepad.left_stick_y);
       } else {
         bot.slideSystem.holdLiftHeight();
       }
+
       // right y: clamp
-      bot.slideSystem.setClampSpeed(-gamepad.right_stick_y);
+//      bot.slideSystem.setClampSpeed(-gamepad.right_stick_y);
+      if (gamepad.right_stick_y < -0.6) {
+        bot.slideSystem.openClamp();
+      }
+      else if (gamepad.right_stick_y > 0.6) {
+        bot.slideSystem.closeClamp();
+      }
+
       // right x: four bar
       bot.slideSystem.setFourBarSpeed(gamepad.right_stick_x);
-    }, s -> {
-    }, g -> g.right_bumper, Color.GRAY);
+
+    }, s -> {}, g -> g.right_bumper, Color.GRAY);
 
     private final BiConsumer<Gamepad, Bot> update;
     private final Consumer<Bot> justEntered;

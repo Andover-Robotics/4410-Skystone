@@ -41,7 +41,7 @@ public class TeleOpMain extends OpMode {
   }
 
   private void controlIntake() {
-    double intakeSpeed = gamepad1.left_trigger / 2;
+    double intakeSpeed = gamepad1.left_trigger * 0.5;
     double outtakeSpeed = gamepad1.right_trigger * 0.4;
 
     if (intakeSpeed > 0) {
@@ -67,7 +67,8 @@ public class TeleOpMain extends OpMode {
 
     if (Math.abs(gamepad1.right_stick_x) > 0.1 && driveVector.getPolarDistance() < 0.1) {
       bot.driveTrain.setRotationPower(gamepad1.right_stick_x);
+    } else {
+      bot.driveTrain.setStrafeRotation(driveVector, driveVector.getPolarDistance(), gamepad1.right_stick_x);
     }
-    bot.driveTrain.setStrafeRotation(driveVector, driveVector.getPolarDistance(), gamepad1.right_stick_x);
   }
 }
