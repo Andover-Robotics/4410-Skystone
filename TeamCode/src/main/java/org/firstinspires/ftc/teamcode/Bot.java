@@ -15,6 +15,7 @@ import org.firstinspires.ftc.teamcode.hardware.SlideSystem;
 import org.firstinspires.ftc.teamcode.util.AxesSigns;
 import org.firstinspires.ftc.teamcode.util.BNO055IMUUtil;
 import org.openftc.revextensions2.ExpansionHubEx;
+import org.openftc.revextensions2.RevBulkData;
 
 import java.io.IOException;
 
@@ -76,7 +77,7 @@ public class Bot {
         opMode.hardwareMap.dcMotor.get("liftL"),
         opMode.hardwareMap.dcMotor.get("liftR"),
         opMode.hardwareMap.servo.get("clamp"),
-        opMode.hardwareMap.crservo.get("fourBar"));
+        opMode.hardwareMap.servo.get("fourBar"));
 
     hub1 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 1");
     hub2 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 2");

@@ -10,57 +10,113 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class ControlState {
+
   public enum Stage {
 
-    PICKUP((gamepad, bot) -> {
+    PICKUP((bot, opMode) -> {
+      TeleOpMain.driveSpeed = 1;
+      if (opMode.gamepad2.right_bumper) {
+        // clamp
+        bot.slideSystem.closeClamp();
+      }
+    }, s -> {
+    }, s -> s.a && !s.start, Color.YELLOW),
+
+    DELIVERY((bot, opMode) -> {
+      TeleOpMain.driveSpeed = 1;
+
+//      if (opMode.gamepad2.right_trigger > 0.3) {
+//        bot.slideSystem.startRunningLiftsToLevel(ControlState.stoneLevel);
+//      }
 
     }, s -> {
-    }, s -> s.a, Color.YELLOW),
+    }, s -> s.x && !s.start, 0xFFFF8000 /* orange */),
 
-    DELIVERY((gamepad, bot) -> {
+    STACKING((bot, opMode) -> {
+      TeleOpMain.driveSpeed = 0.4;
 
-    }, s -> {
-    }, s -> s.b, 0xFFFF8000 /* orange */),
+      bot.slideSystem.setLiftPower(opMode.gamepad2.right_trigger - opMode.gamepad2.left_trigger);
+      if (opMode.gamepad2.left_bumper) {
+        bot.slideSystem.releaseClamp();
+      }
 
-    STACKING((gamepad, bot) -> {
+    }, bot -> {
+      bot.slideSystem.rotateFourBarToRelease();
+    }, s -> s.y && !s.start, Color.MAGENTA),
 
-    }, s -> {
-    }, s -> s.y, Color.MAGENTA),
+    RETURN((bot, opMode) -> {
+      TeleOpMain.driveSpeed = 1;
 
-    RETURN((gamepad, bot) -> {
+    }, bot -> {
+      // Reset 4-bar and clamp
+      bot.slideSystem.rotateFourBarToGrab();
+      bot.slideSystem.openClamp();
+      //bot.slideSystem.startRunningLiftsToLevel(0);
+    }, s -> s.b && !s.start, Color.CYAN),
 
-    }, s -> {
-    }, s -> s.x, Color.CYAN),
-
-    MANUAL((gamepad, bot) -> {
+    MANUAL((bot, opMode) -> {
 
       // left y: lift
-      if (Math.abs(gamepad.left_stick_y) > 0.1) {
-        bot.slideSystem.setLiftPower(-gamepad.left_stick_y);
+      if (Math.abs(opMode.gamepad2.left_stick_y) > 0.1) {
+        bot.slideSystem.setLiftPower(-opMode.gamepad2.left_stick_y);
       } else {
         bot.slideSystem.holdLiftHeight();
       }
 
       // right y: clamp
 //      bot.slideSystem.setClampSpeed(-gamepad.right_stick_y);
-      if (gamepad.right_stick_y < -0.6) {
-        bot.slideSystem.openClamp();
+      if (opMode.gamepad2.right_stick_y < -0.2) {
+        bot.slideSystem.setClampSpeed(opMode.gamepad2.right_stick_y);
       }
-      else if (gamepad.right_stick_y > 0.6) {
+      else if (opMode.gamepad2.right_stick_y > 0.4) {
         bot.slideSystem.closeClamp();
       }
 
       // right x: four bar
-      bot.slideSystem.setFourBarSpeed(gamepad.right_stick_x);
+      bot.slideSystem.setFourBarSpeed(opMode.gamepad2.right_stick_x);
 
-    }, s -> {}, g -> g.right_bumper, Color.GRAY);
+    }, bot -> {
+      bot.slideSystem.relaxLift();
+    }, g -> g.right_bumper, Color.GRAY),
 
-    private final BiConsumer<Gamepad, Bot> update;
+    ONE_CTRL_MANUAL((bot, opMode) -> {
+      Gamepad pad = opMode.gamepad1;
+
+      // dpad up/down: lift
+      if (pad.dpad_up) {
+        bot.slideSystem.setLiftPower(0.7);
+      } else if (pad.dpad_down) {
+        bot.slideSystem.setLiftPower(-0.7);
+      } else {
+        bot.slideSystem.holdLiftHeight();
+      }
+
+      // X & B: four-bar
+      if (pad.x) {
+        bot.slideSystem.rotateFourBarToGrab();
+      } else if (pad.b) {
+        bot.slideSystem.rotateFourBarToRelease();
+      }
+
+      // Y & A & back: clamp
+      if (pad.a) {
+        bot.slideSystem.closeClamp();
+      } else if (pad.y) {
+        bot.slideSystem.openClamp();
+      } else if (pad.back) {
+        bot.slideSystem.releaseClamp();
+      }
+
+    }, bot -> {
+      bot.slideSystem.relaxLift();
+    }, g -> g.left_stick_button && g.right_stick_button, Color.RED);
+
+    private final BiConsumer<Bot, TeleOpMain> update;
     private final Consumer<Bot> justEntered;
     private final Predicate<Gamepad> shouldEnter;
     private final int modeColor;
 
-    Stage(BiConsumer<Gamepad, Bot> update, Consumer<Bot> justEntered,
+    Stage(BiConsumer<Bot, TeleOpMain> update, Consumer<Bot> justEntered,
           Predicate<Gamepad> shouldEnter, int modeColor) {
       this.update = update;
       this.justEntered = justEntered;
@@ -86,8 +142,8 @@ public class ControlState {
     stage.justEntered.accept(Bot.getInstance());
   }
 
-  public static void runLoop(OpMode opMode) {
-    currentStage.update.accept(opMode.gamepad2, Bot.getInstance());
+  public static void runLoop(TeleOpMain opMode) {
+    currentStage.update.accept(Bot.getInstance(), opMode);
   }
 
   private static void showColor(int color) {

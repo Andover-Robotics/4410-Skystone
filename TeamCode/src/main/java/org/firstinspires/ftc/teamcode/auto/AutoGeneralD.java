@@ -24,9 +24,4 @@ public abstract class AutoGeneralD extends SkystoneAuto {
         .build());
   }
 
-  protected void initFields() {
-    bot = Bot.getInstance(this);
-    driveBase = new MecanumDriveREVOptimized(hardwareMap);
-  }
-
 }

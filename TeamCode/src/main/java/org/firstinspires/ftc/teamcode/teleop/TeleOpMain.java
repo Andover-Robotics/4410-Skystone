@@ -10,6 +10,7 @@ import org.openftc.revextensions2.ExpansionHubEx;
 @TeleOp(name = "4410-2020 TeleOp", group = "Competition")
 public class TeleOpMain extends OpMode {
   private Bot bot;
+  public static double driveSpeed = 1;
 
   @Override
   public void init() {
@@ -65,10 +66,13 @@ public class TeleOpMain extends OpMode {
     Coordinate driveVector = Coordinate.fromXY(gamepad1.left_stick_x, -gamepad1.left_stick_y)
         .rotate((int) -bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle);
 
+    double microMultiplier = gamepad1.left_stick_button ? 0.2 : driveSpeed;
+
     if (Math.abs(gamepad1.right_stick_x) > 0.1 && driveVector.getPolarDistance() < 0.1) {
       bot.driveTrain.setRotationPower(gamepad1.right_stick_x);
     } else {
-      bot.driveTrain.setStrafeRotation(driveVector, driveVector.getPolarDistance(), gamepad1.right_stick_x);
+      bot.driveTrain.setStrafeRotation(driveVector,
+          driveVector.getPolarDistance() * microMultiplier, gamepad1.right_stick_x);
     }
   }
 }
