@@ -14,12 +14,13 @@ public class ControlState {
   public enum Stage {
 
     PICKUP((bot, opMode) -> {
-      TeleOpMain.driveSpeed = 1;
+      TeleOpMain.driveSpeed = 0.6;
       if (opMode.gamepad2.right_bumper) {
         // clamp
         bot.slideSystem.closeClamp();
       }
-    }, s -> {
+    }, bot -> {
+      bot.slideSystem.prepareToIntake();
     }, s -> s.a && !s.start, Color.YELLOW),
 
     DELIVERY((bot, opMode) -> {

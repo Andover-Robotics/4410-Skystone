@@ -47,7 +47,7 @@ public class DriveConstants {
     public static double WHEEL_RADIUS = 1.88;
     // 19.2:1s have a max output RPM of 312, whereas the default GoBILDA5202 motor type specifies the max RPM to be 60
     public static double GEAR_RATIO = 312.0 / 60.0; // output (wheel) speed / input (motor) speed
-    public static double TRACK_WIDTH = 15.05;
+    public static double TRACK_WIDTH = 14.85;
 
     /*
      * These are the feedforward parameters used to model the drive motor behavior. If you are using

@@ -38,6 +38,8 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     drive(it -> it.forward(8));
     driveBase.turnSync(-Math.PI / 2);
 
+    if (gamepad1.back) return;
+
     Pair<StonePosition, Double> result = detector.estimatedSkystonePosition();
     telemetry.addData("position", result.first);
     telemetry.addData("confidence", "%.5f", result.second);
@@ -67,26 +69,49 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 //        return;
 //    }
 
-    driveBase.followTrajectorySync(navToOuterSkystoneTrajectory(result.first));
+    navToOuterSkystoneTrajectory(result.first);
+
+    bot.slideSystem.prepareToIntake();
+    while (bot.slideSystem.isLiftBusy() && !isStopRequested());
+    sleep(700);
 
     // intake while moving forward
     bot.intake.takeIn(config.getDouble("skystoneIntakePower"));
-    drive(t -> t.back(7));
+    drive(t -> t.back(8));
     sleep(500);
     bot.intake.stop();
 
     // Congrats! You should theoretically have a Skystone.
     strafeHorizontally(false, 22);
 
-    drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(20, -40))));
-    driveBase.turnSync(Math.PI);
+    // Prepare to cross the Skybridge
+    bot.slideSystem.startRunningLiftsToBottom();
+    while (bot.slideSystem.isLiftBusy() && !isStopRequested());
 
-    bot.intake.takeOut(0.7);
-    sleep(600);
-    bot.intake.stop();
+    bot.slideSystem.relaxLift();
+    bot.slideSystem.closeClamp();
+
+    drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(20, -40)))
+        .splineTo(allianceSpecificPoseFromRed(new Pose2d(60, -30, Math.PI / 2))));
+
+
+    bot.slideSystem.setLiftTargetPosition(1200);
+    bot.slideSystem.runLiftsToTargetPosition(1);
+    while (bot.slideSystem.isLiftBusy() && !isStopRequested());
+
+    bot.slideSystem.rotateFourBarToRelease();
+    sleep(1500);
+    bot.slideSystem.releaseClamp();
+    sleep(500);
+
+    bot.slideSystem.rotateFourBarToTop();
+    sleep(1600);
+    bot.slideSystem.openClamp();
+
+    bot.slideSystem.startRunningLiftsToLevel(0);
 
     drive(t -> t
-        .splineTo(allianceSpecificPoseFromRed(new Pose2d(20, -40, Math.PI/2)))
+        .splineTo(allianceSpecificPoseFromRed(new Pose2d(60, -40, Math.PI / 2)))
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-5, -42))));
   }
 
@@ -149,7 +174,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     }
   }
 
-  private Trajectory navToOuterSkystoneTrajectory(StonePosition position) {
+  private void navToOuterSkystoneTrajectory(StonePosition position) {
     double baseSkystoneXOffset = config.getDouble("baseSkystoneXOffset");
     double apparentSkystoneWidth = config.getDouble("apparentSkystoneWidth");
 
@@ -160,9 +185,14 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     telemetry.addData("xBeforeIntake", xBeforeIntake);
     telemetry.update();
 
-    return driveBase.trajectoryBuilder()
-        .splineTo(allianceSpecificPoseFromRed(new Pose2d(xBeforeIntake, -38, 0.5)))
+    driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(xBeforeIntake, -38)))
+        .build());
+
+    driveBase.turnSync(-config.getDouble("intakeAngle"));
+
+    driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(xBeforeIntake, -(config.getDouble("quarryY")))))
-        .build();
+        .build());
   }
 }

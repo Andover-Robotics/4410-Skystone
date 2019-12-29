@@ -11,7 +11,7 @@ public class Intake {
     leftWheel = flyWheelLeft;
     rightWheel = flyWheelRight;
 
-    rightWheel.setDirection(DcMotorSimple.Direction.REVERSE);
+    leftWheel.setDirection(DcMotorSimple.Direction.REVERSE);
   }
 
   private void spin(double power) {
