@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.auto;
 
+import android.util.Log;
 import android.util.Pair;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
@@ -16,6 +17,7 @@ import org.firstinspires.ftc.teamcode.util.AllianceColor;
 import java.io.IOException;
 import java.util.function.Function;
 
+import static org.firstinspires.ftc.teamcode.util.AllianceColor.BLUE;
 import static org.firstinspires.ftc.teamcode.util.AllianceColor.RED;
 
 public abstract class AutoGeneralA extends SkystoneAuto {
@@ -44,6 +46,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     telemetry.addData("position", result.first);
     telemetry.addData("confidence", "%.5f", result.second);
     telemetry.update();
+    Log.v("Autonomous A", "position sensed: " + result.first);
 
     detector.close();
 
@@ -68,21 +71,24 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 //        while (!isStopRequested()) ;
 //        return;
 //    }
+    if (alliance == BLUE) {
+      driveBase.turnSync(Math.PI);
+    }
 
     navToOuterSkystoneTrajectory(result.first);
 
     bot.slideSystem.prepareToIntake();
+    sleep(100);
     while (bot.slideSystem.isLiftBusy() && !isStopRequested());
-    sleep(700);
 
     // intake while moving forward
     bot.intake.takeIn(config.getDouble("skystoneIntakePower"));
-    drive(t -> t.back(8));
-    sleep(500);
+    drive(t -> t.back(9));
+    sleep(1200);
     bot.intake.stop();
 
     // Congrats! You should theoretically have a Skystone.
-    strafeHorizontally(false, 22);
+    strafeHorizontally(false, 20);
 
     // Prepare to cross the Skybridge
     bot.slideSystem.startRunningLiftsToBottom();
@@ -92,10 +98,10 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     bot.slideSystem.closeClamp();
 
     drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(20, -40)))
-        .splineTo(allianceSpecificPoseFromRed(new Pose2d(60, -30, Math.PI / 2))));
+        .splineTo(allianceSpecificPoseFromRed(new Pose2d(46, -24, Math.PI / 2.7))));
 
 
-    bot.slideSystem.setLiftTargetPosition(1200);
+    bot.slideSystem.setLiftTargetPosition(1300);
     bot.slideSystem.runLiftsToTargetPosition(1);
     while (bot.slideSystem.isLiftBusy() && !isStopRequested());
 
@@ -108,11 +114,12 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     sleep(1600);
     bot.slideSystem.openClamp();
 
-    bot.slideSystem.startRunningLiftsToLevel(0);
+    bot.slideSystem.startRunningLiftsToBottom();
+    while (bot.slideSystem.isLiftBusy() && !isStopRequested());
+
 
     drive(t -> t
-        .splineTo(allianceSpecificPoseFromRed(new Pose2d(60, -40, Math.PI / 2)))
-        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-5, -42))));
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-12, -37))));
   }
 
   private void adjustCvWindowWhileWaitForStart() {
@@ -178,18 +185,19 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     double baseSkystoneXOffset = config.getDouble("baseSkystoneXOffset");
     double apparentSkystoneWidth = config.getDouble("apparentSkystoneWidth");
 
-    double xBeforeIntake = -baseSkystoneXOffset - apparentSkystoneWidth *
-            (alliance == AllianceColor.RED ? position.offsetRight() : position.offsetLeft);
+    double xBeforeIntake;
+    if (position == StonePosition.LEFT) {
+      xBeforeIntake = -baseSkystoneXOffset + apparentSkystoneWidth;
+    } else {
+      xBeforeIntake = -baseSkystoneXOffset - apparentSkystoneWidth *
+          (alliance == AllianceColor.RED ? position.offsetRight() : position.offsetLeft);
+    }
 
 
     telemetry.addData("xBeforeIntake", xBeforeIntake);
     telemetry.update();
 
-    driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
-        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(xBeforeIntake, -38)))
-        .build());
-
-    driveBase.turnSync(-config.getDouble("intakeAngle"));
+    driveBase.turnSync(allianceSpecificHeadingFromRed(-config.getDouble("intakeAngle")));
 
     driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(xBeforeIntake, -(config.getDouble("quarryY")))))

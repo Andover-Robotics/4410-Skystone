@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.hardware;
 
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.teamcode.ConfigUser;
 
@@ -10,33 +12,40 @@ public class FoundationMover extends ConfigUser<FoundationMover.ConfigSchema> {
     public double scaleRangeMin, scaleRangeMax;
   }
 
-  private Servo armLeft, armRight;
+  public CRServo armLeft, armRight;
 
-  public FoundationMover(Servo armLeft, Servo armRight) {
+  public FoundationMover(CRServo armLeft, CRServo armRight) {
     super("foundationMover.properties", new ConfigSchema());
 
     this.armLeft = armLeft;
     this.armRight = armRight;
 
-    if (config.leftReverse)
-      armLeft.setDirection(Servo.Direction.REVERSE);
-    else
-      armRight.setDirection(Servo.Direction.REVERSE);
+//    armRight.setDirection(DcMotorSimple.Direction.REVERSE);
+  }
 
-    armLeft.scaleRange(config.scaleRangeMin, config.scaleRangeMax);
-    armRight.scaleRange(config.scaleRangeMin, config.scaleRangeMax);
+  public void setPower(double power) {
+    armLeft.setPower(power);
+    armRight.setPower(-power);
   }
 
   public void armDown() {
-    setPositions(0);
+    setPower(1);
+    try {
+      Thread.sleep(800);
+    } catch (InterruptedException e) {
+      return;
+    }
+    setPower(0);
   }
+
 
   public void armUp() {
-    setPositions(1);
-  }
-
-  private void setPositions(int pos) {
-    armLeft.setPosition(pos);
-    armRight.setPosition(pos);
+    setPower(-1);
+    try {
+      Thread.sleep(800);
+    } catch (InterruptedException e) {
+      return;
+    }
+    setPower(0);
   }
 }

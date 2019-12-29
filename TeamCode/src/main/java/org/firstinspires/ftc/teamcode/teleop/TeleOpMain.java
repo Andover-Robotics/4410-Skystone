@@ -31,6 +31,7 @@ public class TeleOpMain extends OpMode {
   public void loop() {
     long startMillis = System.currentTimeMillis();
 
+    adjustDriveSpeed();
     driveFieldCentric();
     controlFoundationMovers();
     controlIntake();
@@ -42,8 +43,11 @@ public class TeleOpMain extends OpMode {
       ControlState.updateStage(this);
     }
 
+    showLiftStatus();
+
     telemetry.addData("cycle period", "%d ms", System.currentTimeMillis() - startMillis);
     telemetry.addData("current control state", ControlState.currentStage);
+    telemetry.addData("drive speed", "%.3f", driveSpeed);
     telemetry.addData("current draw 1", bot.hub1.getTotalModuleCurrentDraw(ExpansionHubEx.CurrentDrawUnits.AMPS));
     telemetry.addData("current draw 2", bot.hub2.getTotalModuleCurrentDraw(ExpansionHubEx.CurrentDrawUnits.AMPS));
 
@@ -51,6 +55,21 @@ public class TeleOpMain extends OpMode {
     if (gamepad1.right_stick_button) {
       // Reset field centric (set current heading to human heading)
       bot.initImu(this);
+    }
+  }
+
+  private boolean lastStatusBusy = false;
+  private void showLiftStatus() {
+    boolean liftBusy = bot.slideSystem.isLiftBusy();
+    if (liftBusy != lastStatusBusy) {
+      if (liftBusy) {
+        bot.hub1.setLedColor(255, 255, 0);
+        bot.hub2.setLedColor(255, 255, 0);
+      } else {
+        bot.hub1.setLedColor(0, 255, 100);
+        bot.hub2.setLedColor(0, 255, 100);
+      }
+      lastStatusBusy = liftBusy;
     }
   }
 
@@ -68,20 +87,29 @@ public class TeleOpMain extends OpMode {
   }
 
   private void controlFoundationMovers() {
-    if (gamepad1.left_bumper || gamepad1.right_bumper) {
-      bot.foundationMover.armDown();
+    if (gamepad1.left_bumper) {
+      bot.foundationMover.setPower(0.6);
+    } else if (gamepad1.right_bumper) {
+      bot.foundationMover.setPower(-0.6);
     } else {
-      bot.foundationMover.armUp();
+      bot.foundationMover.setPower(0);
+    }
+  }
+
+  private void adjustDriveSpeed() {
+    if (gamepad1.back) {
+      driveSpeed = 0.3;
+    } else if (gamepad1.start) {
+      driveSpeed = 1;
     }
   }
 
   private void driveFieldCentric() {
     Coordinate driveVector = Coordinate.fromXY(gamepad1.left_stick_x, -gamepad1.left_stick_y)
-        .add(getMicroAdjustmentStrafeCoordinate().scale(0.3))
         .rotate((int) -bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle);
 
-    double microMultiplier = gamepad1.left_stick_button ? 0.2 : driveSpeed;
-    double rotation = gamepad1.right_stick_x + getMicroAdjustmentRotation() * 0.2;
+    double microMultiplier = driveSpeed;
+    double rotation = gamepad1.right_stick_x;
 
     if (Math.abs(gamepad1.right_stick_x) > 0.1 && driveVector.getPolarDistance() < 0.1) {
       bot.driveTrain.setRotationPower(rotation);
@@ -89,19 +117,6 @@ public class TeleOpMain extends OpMode {
       bot.driveTrain.setStrafeRotation(driveVector,
           driveVector.getPolarDistance() * microMultiplier, rotation);
     }
-  }
-
-  private Coordinate getMicroAdjustmentStrafeCoordinate() {
-    int x = 0, y = 0;
-    if (gamepad1.dpad_up) y += 1;
-    if (gamepad1.dpad_down) y -= 1;
-    if (gamepad1.dpad_right) x += 1;
-    if (gamepad1.dpad_left) x -= 1;
-    return Coordinate.fromXY(x, y);
-  }
-
-  private int getMicroAdjustmentRotation() {
-    return (gamepad1.b ? 1 : 0) + (gamepad1.x ? -1 : 0);
   }
 
   private void automateSimply() {
@@ -122,7 +137,7 @@ public class TeleOpMain extends OpMode {
     if (gamepad2.right_stick_y < -0.2) {
       bot.slideSystem.setClampSpeed(gamepad2.right_stick_y);
     }
-    else if (gamepad2.right_stick_y > 0.4) {
+    else if (gamepad2.right_stick_y > 0.3) {
       bot.slideSystem.closeClamp();
     }
     else if (gamepad2.back) {

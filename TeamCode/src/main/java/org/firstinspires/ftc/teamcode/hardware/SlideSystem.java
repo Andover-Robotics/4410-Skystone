@@ -17,6 +17,7 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
     public int ticksPerLevel, intakeLiftHeightTicks, liftLevelOffset;
 
     public int liftBottomTicks, liftTopTicks;
+    public boolean debugControlDashboard;
   }
 
   public CachedMotor liftLeft, liftRight;
@@ -40,12 +41,20 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
   }
 
   private void setupLiftMotors(DcMotor liftLeft, DcMotor liftRight) {
-    liftLeft.setTargetPosition(0);
-    liftRight.setTargetPosition(0);
-    liftLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-    liftRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-    liftLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-    liftRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    for (DcMotor motor : Arrays.asList(liftLeft, liftRight)) {
+      DcMotorEx motorEx = (DcMotorEx) motor;
+
+      motorEx.setTargetPosition(0);
+      motorEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+      motorEx.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+      motorEx.setTargetPositionTolerance(20);
+
+      PIDFCoefficients coefficients = motorEx.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
+      motorEx.setPositionPIDFCoefficients(coefficients.p + 0.8);
+
+      coefficients = motorEx.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
+      motorEx.setVelocityPIDFCoefficients(coefficients.p + 0.1, coefficients.i + 0.5, coefficients.d, coefficients.f + 0.2);
+    }
   }
 
   public void prepareToIntake() {
@@ -110,6 +119,7 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
   }
 
   public void startRunningLiftsToBottom() {
+    relaxLift();
     setLiftTargetPosition(0);
     runLiftsToTargetPosition(1);
   }

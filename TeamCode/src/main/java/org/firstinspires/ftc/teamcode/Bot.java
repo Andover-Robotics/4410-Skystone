@@ -43,7 +43,6 @@ public class Bot {
   public Configuration mainConfig;
 
   private Bot(OpMode opMode) {
-    instance = this;
 
     initConfig();
 
@@ -70,8 +69,8 @@ public class Bot {
         motor(opMode, "intakeRight"));
 
     foundationMover = new FoundationMover(
-        opMode.hardwareMap.servo.get("foundationLeft"),
-        opMode.hardwareMap.servo.get("foundationRight"));
+        opMode.hardwareMap.crservo.get("foundationLeft"),
+        opMode.hardwareMap.crservo.get("foundationRight"));
 
     slideSystem = new SlideSystem(
         opMode.hardwareMap.dcMotor.get("liftL"),
@@ -82,6 +81,7 @@ public class Bot {
     hub1 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 1");
     hub2 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 2");
 
+    instance = this;
     initImu(opMode);
   }
 

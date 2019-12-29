@@ -19,19 +19,18 @@ public abstract class AutoGeneralC extends SkystoneAuto {
                 .build());
 
         bot.foundationMover.armDown();
-        sleep(2000);
 
         // Pull the foundation to the build site
         driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
-                .strafeTo(allianceSpecificPositionFromRed(new Vector2d(51, -63)))
+                .strafeTo(allianceSpecificPositionFromRed(new Vector2d(51, -70)))
+                .splineTo(allianceSpecificPoseFromRed(new Pose2d(58, -64, -0.4)))
                 .build());
 
         bot.foundationMover.armUp();
-        sleep(2000);
 
         // Park under the SkyBridge
         driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
-                .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-5, -63)))
+                .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-7, -59)))
                 .build());
 
     }
