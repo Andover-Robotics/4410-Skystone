@@ -11,5 +11,7 @@ public abstract class AutoGeneralB extends SkystoneAuto {
     driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-5, -60)))
         .build());
+
+    partyUntilItsOver();
   }
 }

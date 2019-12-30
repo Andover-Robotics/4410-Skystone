@@ -11,7 +11,7 @@ import org.openftc.revextensions2.ExpansionHubEx;
 public class TeleOpMain extends OpMode {
   private Bot bot;
   public static double driveSpeed = 1;
-  private boolean useSimpleAutomation = false;
+  private boolean useSimpleAutomation = true;
 
   @Override
   public void init() {
@@ -21,8 +21,8 @@ public class TeleOpMain extends OpMode {
 
   public void init_loop() {
     if (gamepad1.x) {
-      useSimpleAutomation = true;
-      telemetry.addData("automation is now", "simple");
+      useSimpleAutomation = false;
+      telemetry.addData("automation is now", "very complicated");
       telemetry.update();
     }
   }
