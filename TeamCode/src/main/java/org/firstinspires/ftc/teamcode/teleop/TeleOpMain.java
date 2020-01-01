@@ -16,7 +16,11 @@ public class TeleOpMain extends OpMode {
   @Override
   public void init() {
     bot = Bot.getInstance(this);
-    bot.slideSystem.zeroLifts();
+
+    telemetry.addData("TeleOp", "initialized");
+    telemetry.addData("left lift position", bot.slideSystem.liftLeft.getMotor().getCurrentPosition());
+    telemetry.addData("right lift position", bot.slideSystem.liftRight.getMotor().getCurrentPosition());
+    telemetry.update();
   }
 
   public void init_loop() {
@@ -38,6 +42,7 @@ public class TeleOpMain extends OpMode {
 
     if (useSimpleAutomation) {
       automateSimply();
+      bot.slideSystem.relayLiftDebugDashboard();
     } else {
       ControlState.runLoop(this);
       ControlState.updateStage(this);
@@ -63,8 +68,8 @@ public class TeleOpMain extends OpMode {
     boolean liftBusy = bot.slideSystem.isLiftBusy();
     if (liftBusy != lastStatusBusy) {
       if (liftBusy) {
-        bot.hub1.setLedColor(255, 255, 0);
-        bot.hub2.setLedColor(255, 255, 0);
+        bot.hub1.setLedColor(255, 50, 0);
+        bot.hub2.setLedColor(255, 50, 0);
       } else {
         bot.hub1.setLedColor(0, 255, 100);
         bot.hub2.setLedColor(0, 255, 100);
@@ -109,7 +114,7 @@ public class TeleOpMain extends OpMode {
         .rotate((int) -bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle);
 
     double microMultiplier = driveSpeed;
-    double rotation = gamepad1.right_stick_x;
+    double rotation = gamepad1.right_stick_x * driveSpeed;
 
     if (Math.abs(gamepad1.right_stick_x) > 0.1 && driveVector.getPolarDistance() < 0.1) {
       bot.driveTrain.setRotationPower(rotation);
@@ -124,7 +129,7 @@ public class TeleOpMain extends OpMode {
     // left y: lift
     if (Math.abs(gamepad2.left_stick_y) > 0.1) {
       bot.slideSystem.setLiftPower(-gamepad2.left_stick_y);
-    } else {
+    } else if (!bot.slideSystem.liftLeft.getMotor().isBusy()) {
       bot.slideSystem.holdLiftHeight();
     }
     if (gamepad2.right_bumper) {

@@ -1,12 +1,15 @@
 package org.firstinspires.ftc.teamcode.hardware;
 
 import android.util.Log;
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.andoverrobotics.core.utilities.CachedMotor;
 import com.qualcomm.robotcore.hardware.*;
 import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.teamcode.ConfigUser;
 
 import java.util.Arrays;
+import java.util.concurrent.Executor;
 
 public class SlideSystem extends ConfigUser<SlideSystem.Config> {
   public static class Config {
@@ -77,7 +80,10 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
   }
 
   public void setLiftPower(double power) {
-    if (willLiftExceedLimitsGivenPower(power)) return;
+    if (willLiftExceedLimitsGivenPower(power)) {
+      relaxLift();
+      return;
+    }
     liftLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     liftRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     liftLeft.setPower(power * config.slideSpeed);
@@ -125,7 +131,13 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
   }
 
   public boolean isLiftBusy() {
-    return liftLeft.getMotor().isBusy() || liftRight.getMotor().isBusy();
+//    return liftLeft.getMotor().isBusy() || liftRight.getMotor().isBusy();
+    int leftPos = liftLeft.getMotor().getCurrentPosition(),
+        rightPos = liftRight.getMotor().getCurrentPosition(),
+        leftError = Math.abs(leftPos - liftLeft.getTargetPosition()),
+        rightError = Math.abs(rightPos - liftRight.getTargetPosition());
+
+    return Math.max(leftError, rightError) > 30;
   }
 
   private int liftTarget(int level) {
@@ -151,6 +163,18 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
     for (CachedMotor motor : Arrays.asList(liftLeft, liftRight)) {
       motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
       motor.setPower(0);
+    }
+  }
+
+  public void relayLiftDebugDashboard() {
+    if (config.debugControlDashboard) {
+      TelemetryPacket packet = new TelemetryPacket();
+      packet.put("leftLift current", liftLeft.getMotor().getCurrentPosition());
+      packet.put("rightLift current", liftRight.getMotor().getCurrentPosition());
+      packet.put("leftLift target", liftLeft.getTargetPosition());
+      packet.put("rightLift target", liftRight.getTargetPosition());
+
+      FtcDashboard.getInstance().sendTelemetryPacket(packet);
     }
   }
 

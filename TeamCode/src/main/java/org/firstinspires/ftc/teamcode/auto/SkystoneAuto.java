@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.auto;
 
+import android.media.MediaPlayer;
+import android.provider.MediaStore;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.BaseTrajectoryBuilder;
@@ -20,7 +22,7 @@ public abstract class SkystoneAuto extends LinearOpMode {
   protected Bot bot;
   protected MecanumDriveBase driveBase;
   protected AllianceColor alliance;
-  protected SoundPlayer soundPlayer = SoundPlayer.getInstance();
+  protected MediaPlayer soundPlayer = new MediaPlayer();
 
   protected Pose2d allianceSpecificPoseFromRed(Pose2d redPose) {
     return new Pose2d(
@@ -45,7 +47,8 @@ public abstract class SkystoneAuto extends LinearOpMode {
   }
 
   protected void rickRoll() {
-    soundPlayer.startPlaying(hardwareMap.appContext, R.raw.rickroll);
+    soundPlayer = MediaPlayer.create(hardwareMap.appContext, R.raw.rickroll);
+    soundPlayer.start();
   }
 
   protected void partyUntilItsOver() {
@@ -53,9 +56,10 @@ public abstract class SkystoneAuto extends LinearOpMode {
     int second;
 
     rickRoll();
+    bot.slideSystem.rotateFourBarToTop();
 
     // 20 iterations per second
-    while (getRuntime() < 30) {
+    while (getRuntime() < 30 && !isStopRequested()) {
       sleep(50);
 
       // set hub colors according to rainbow
@@ -76,6 +80,6 @@ public abstract class SkystoneAuto extends LinearOpMode {
     }
 
     // clean it up
-    soundPlayer.stopPlayingAll();
+    soundPlayer.stop();
   }
 }

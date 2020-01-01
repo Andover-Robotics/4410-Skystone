@@ -33,6 +33,11 @@ public class Bot {
     return instance;
   }
 
+  public static void unloadBot() {
+    instance = null;
+    System.gc();
+  }
+
   public final StrafingDriveTrain driveTrain;
   public final Intake intake;
   public final FoundationMover foundationMover;

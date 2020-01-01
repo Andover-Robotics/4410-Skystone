@@ -9,6 +9,7 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.andoverrobotics.core.config.Configuration;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import kotlin.Unit;
 import org.firstinspires.ftc.teamcode.Bot;
 import org.firstinspires.ftc.teamcode.drive.mecanum.MecanumDriveBase;
 import org.firstinspires.ftc.teamcode.drive.mecanum.MecanumDriveREVOptimized;
@@ -35,6 +36,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     if (isStopRequested()) return;
 
     driveBase.setPoseEstimate(allianceSpecificPoseFromRed(new Pose2d(-33, -63, Math.PI / 2)));
+    rickRoll();
 
     // Align phone with target
     drive(it -> it.forward(8));
@@ -72,7 +74,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 //        return;
 //    }
     if (alliance == BLUE) {
-      driveBase.turnSync(Math.PI);
+      driveBase.turnSync(-Math.PI);
     }
 
     navToOuterSkystoneTrajectory(result.first);
@@ -80,46 +82,69 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     bot.slideSystem.prepareToIntake();
     sleep(100);
     while (bot.slideSystem.isLiftBusy() && !isStopRequested());
+    if (isStopRequested()) return;
 
     // intake while moving forward
-    bot.intake.takeIn(config.getDouble("skystoneIntakePower"));
-    drive(t -> t.back(9));
-    sleep(1200);
-    bot.intake.stop();
+    driveBase.followTrajectory(driveBase.trajectoryBuilder().back(9).build());
+    pulseIntake(1500);
+    driveBase.waitForIdle();
 
+    bot.slideSystem.startRunningLiftsToBottom();
     // Congrats! You should theoretically have a Skystone.
-    strafeHorizontally(false, 20);
+    strafeHorizontally(false, 17);
 
     // Prepare to cross the Skybridge
-    bot.slideSystem.startRunningLiftsToBottom();
     while (bot.slideSystem.isLiftBusy() && !isStopRequested());
+    if (isStopRequested()) return;
 
     bot.slideSystem.relaxLift();
     bot.slideSystem.closeClamp();
 
-    drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(20, -40)))
-        .splineTo(allianceSpecificPoseFromRed(new Pose2d(46, -24, Math.PI / 2.7))));
+    drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(20, -35)))
+        .addMarker(() -> {
+          bot.slideSystem.setLiftTargetPosition(1200);
+          bot.slideSystem.runLiftsToTargetPosition(1.1);
+          return Unit.INSTANCE;
+        })
+        .splineTo(allianceSpecificPoseFromRed(new Pose2d(40, -24, Math.PI / 2.2)))
+        .forward(3));
+    if (isStopRequested()) return;
 
-
-    bot.slideSystem.setLiftTargetPosition(1300);
-    bot.slideSystem.runLiftsToTargetPosition(1);
     while (bot.slideSystem.isLiftBusy() && !isStopRequested());
 
     bot.slideSystem.rotateFourBarToRelease();
-    sleep(1500);
+    sleep(1300);
     bot.slideSystem.releaseClamp();
-    sleep(500);
+    sleep(400);
 
     bot.slideSystem.rotateFourBarToTop();
-    sleep(1600);
+    sleep(1300);
     bot.slideSystem.openClamp();
 
     bot.slideSystem.startRunningLiftsToBottom();
-    while (bot.slideSystem.isLiftBusy() && !isStopRequested());
 
+    if (config.getBoolean("optionAPullsFoundation")) {
+      bot.foundationMover.armDown();
+      drive(it -> it.reverse()
+          .splineTo(allianceSpecificPoseFromRed(new Pose2d(36, -48, 0))));
+      bot.foundationMover.armUp();
+      drive(it -> it.forward(14));
+    }
+
+    while (bot.slideSystem.isLiftBusy() && !isStopRequested());
 
     drive(t -> t
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-12, -37))));
+  }
+
+  private void pulseIntake(int ms) {
+    double startTime = getRuntime();
+    while ((getRuntime() - startTime) * 1000 < ms && !isStopRequested()) {
+      bot.intake.takeIn(config.getDouble("skystoneIntakePower"));
+      sleep(600);
+      bot.intake.stop();
+      sleep(200);
+    }
   }
 
   private void adjustCvWindowWhileWaitForStart() {
@@ -161,6 +186,13 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 
   private void initCV() {
     detector = new CVSkystoneDetector(hardwareMap);
+    if (alliance == BLUE) {
+      detector.config.stoneWidth = 236;
+      detector.config.stoneHeight = 131;
+      detector.config.leftStoneMidX = 359;
+      detector.config.leftStoneMidY = 223;
+      // TODO reflect this in config files
+    }
     detector.open();
   }
 
@@ -186,21 +218,22 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     double apparentSkystoneWidth = config.getDouble("apparentSkystoneWidth");
 
     double xBeforeIntake;
-    if (position == StonePosition.LEFT) {
+    boolean takeInnerSkystone = (alliance == RED && position == StonePosition.LEFT) ||
+        (alliance == BLUE && position == StonePosition.RIGHT);
+
+    if (takeInnerSkystone) {
       xBeforeIntake = -baseSkystoneXOffset + apparentSkystoneWidth;
     } else {
       xBeforeIntake = -baseSkystoneXOffset - apparentSkystoneWidth *
           (alliance == AllianceColor.RED ? position.offsetRight() : position.offsetLeft);
     }
 
-
     telemetry.addData("xBeforeIntake", xBeforeIntake);
     telemetry.update();
 
     driveBase.turnSync(allianceSpecificHeadingFromRed(-config.getDouble("intakeAngle")));
 
-    driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
-        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(xBeforeIntake, -(config.getDouble("quarryY")))))
-        .build());
+    drive(it -> it.strafeTo(allianceSpecificPositionFromRed(
+        new Vector2d(xBeforeIntake, -(config.getDouble("quarryY"))))));
   }
 }
