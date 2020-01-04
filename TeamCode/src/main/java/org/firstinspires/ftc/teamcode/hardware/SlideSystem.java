@@ -50,10 +50,10 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
       motorEx.setTargetPosition(0);
       motorEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
       motorEx.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-      motorEx.setTargetPositionTolerance(20);
+      motorEx.setTargetPositionTolerance(15);
 
       PIDFCoefficients coefficients = motorEx.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
-      motorEx.setPositionPIDFCoefficients(coefficients.p + 0.8);
+      motorEx.setPositionPIDFCoefficients(coefficients.p + 1.1);
 
       coefficients = motorEx.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
       motorEx.setVelocityPIDFCoefficients(coefficients.p + 0.1, coefficients.i + 0.5, coefficients.d, coefficients.f + 0.2);
@@ -61,6 +61,7 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
   }
 
   public void prepareToIntake() {
+    relaxLift();
     setLiftTargetPosition(config.intakeLiftHeightTicks);
     runLiftsToTargetPosition(1);
     openClamp();
@@ -75,6 +76,7 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
   public void zeroLifts() {
     for (CachedMotor motor : Arrays.asList(liftLeft, liftRight)) {
       motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      motor.setTargetPosition(0);
       motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
   }
@@ -130,14 +132,14 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
     runLiftsToTargetPosition(1);
   }
 
-  public boolean isLiftBusy() {
+  public boolean isLiftRunningToPosition() {
 //    return liftLeft.getMotor().isBusy() || liftRight.getMotor().isBusy();
     int leftPos = liftLeft.getMotor().getCurrentPosition(),
         rightPos = liftRight.getMotor().getCurrentPosition(),
         leftError = Math.abs(leftPos - liftLeft.getTargetPosition()),
         rightError = Math.abs(rightPos - liftRight.getTargetPosition());
 
-    return Math.max(leftError, rightError) > 30;
+    return Math.max(leftError, rightError) > 50;
   }
 
   private int liftTarget(int level) {

@@ -4,19 +4,9 @@ import android.util.Log;
 import android.util.Pair;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
-import com.acmerobotics.roadrunner.trajectory.BaseTrajectoryBuilder;
-import com.acmerobotics.roadrunner.trajectory.Trajectory;
-import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
-import com.andoverrobotics.core.config.Configuration;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.acmerobotics.roadrunner.path.heading.LinearInterpolator;
 import kotlin.Unit;
-import org.firstinspires.ftc.teamcode.Bot;
-import org.firstinspires.ftc.teamcode.drive.mecanum.MecanumDriveBase;
-import org.firstinspires.ftc.teamcode.drive.mecanum.MecanumDriveREVOptimized;
 import org.firstinspires.ftc.teamcode.util.AllianceColor;
-
-import java.io.IOException;
-import java.util.function.Function;
 
 import static org.firstinspires.ftc.teamcode.util.AllianceColor.BLUE;
 import static org.firstinspires.ftc.teamcode.util.AllianceColor.RED;
@@ -24,126 +14,121 @@ import static org.firstinspires.ftc.teamcode.util.AllianceColor.RED;
 public abstract class AutoGeneralA extends SkystoneAuto {
 
   private CVSkystoneDetector detector;
-  private Configuration config;
 
   public void runForColor(AllianceColor alliance) {
-    this.alliance = alliance;
-    initFields();
-    initCV();
-    initConfig();
+    try {
+      this.alliance = alliance;
+      initFields();
+      initCV();
 
-    adjustCvWindowWhileWaitForStart();
-    if (isStopRequested()) return;
+      adjustCvWindowWhileWaitForStart();
+      checkForInterrupt();
 
-    driveBase.setPoseEstimate(allianceSpecificPoseFromRed(new Pose2d(-33, -63, Math.PI / 2)));
-    rickRoll();
+      driveBase.setPoseEstimate(allianceSpecificPoseFromRed(new Pose2d(-33, -63, Math.PI / 2)));
 
-    // Align phone with target
-    drive(it -> it.forward(8));
-    driveBase.turnSync(-Math.PI / 2);
+      // Align phone with target
+      drive(it -> it.forward(8));
+      driveBase.turnSync(-Math.PI / 2);
+      checkForInterrupt();
 
-    if (gamepad1.back) return;
+      if (gamepad1.back) return;
 
-    Pair<StonePosition, Double> result = detector.estimatedSkystonePosition();
-    telemetry.addData("position", result.first);
-    telemetry.addData("confidence", "%.5f", result.second);
-    telemetry.update();
-    Log.v("Autonomous A", "position sensed: " + result.first);
+      sleep(800);
+      Pair<StonePosition, Double> result = detector.estimatedSkystonePosition();
+      telemetry.addData("position", result.first);
+      telemetry.addData("confidence", "%.5f", result.second);
+      telemetry.update();
+      Log.v("Autonomous A", "position sensed: " + result.first);
 
-    detector.close();
+      detector.close();
 
-//    switch (result.first) {
-//      case RIGHT:
-//        // This code is to remain commented out until we attempt to acquire the SkyStone closer to the SkyBridge
-////        drive(t -> t.forward(5 + result.first.offsetLeft * 8));
-////        drive(t -> t.forward(0.553));           // See documentation for 11/15/19 for
-////        drive(t -> t.strafeLeft(7.73776));      //  where these numbers came from
-////        driveBase
-////       .turnSync(-0.65);
-////        drive(t -> t.back(12));
-////        break;
-//      case CENTER:
-//      case LEFT:
-//        drive(t -> t.forward(9 + result.first.offsetLeft * SKYSTONE_LENGTH));
-//        strafeHorizontally(true, 20);
-//        break;
-//      default:
-//        telemetry.addData("Problem", "result.first wasn't initialized");
-//        telemetry.update();
-//        while (!isStopRequested()) ;
-//        return;
-//    }
-    if (alliance == BLUE) {
-      driveBase.turnSync(-Math.PI);
+      if (alliance == BLUE) {
+        driveBase.turnSync(Math.PI);
+      }
+
+      navToOuterSkystoneTrajectory(result.first);
+      checkForInterrupt();
+
+      bot.slideSystem.prepareToIntake();
+      sleep(100);
+      while (bot.slideSystem.isLiftRunningToPosition() && !isStopRequested()) ;
+      checkForInterrupt();
+
+      // intake while moving forward
+      driveBase.setDrivePower(new Pose2d(-(config.getDouble("intakeSpeed")), 0, 0));
+      pulseIntake(2500);
+      driveBase.setDrivePower(new Pose2d(0, 0, 0));
+      checkForInterrupt();
+
+      bot.slideSystem.startRunningLiftsToBottom();
+      strafeHorizontally(false, 20);
+      checkForInterrupt();
+
+      // Prepare to cross the Skybridge
+      while (bot.slideSystem.isLiftRunningToPosition() && !isStopRequested()) ;
+      if (isStopRequested()) return;
+
+      bot.slideSystem.relaxLift();
+      bot.slideSystem.closeClamp();
+      checkForInterrupt();
+
+      drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(20, -40)))
+          .addMarker(() -> {
+            bot.slideSystem.setLiftTargetPosition(950);
+            bot.slideSystem.runLiftsToTargetPosition(1.1);
+            return Unit.INSTANCE;
+          })
+          .splineTo(allianceSpecificPoseFromRed(new Pose2d(34, -30, Math.PI / 2)),
+              new LinearInterpolator(driveBase.getExternalHeading(), allianceSpecificHeadingFromRed(Math.PI / 2)))
+          .forward(3));
+      checkForInterrupt();
+
+      while (bot.slideSystem.isLiftRunningToPosition() && !isStopRequested()) ;
+
+      bot.intake.takeOut(0.6);
+      bot.slideSystem.rotateFourBarToRelease();
+      sleep(1300);
+      bot.slideSystem.releaseClamp();
+      sleep(400);
+
+      bot.slideSystem.rotateFourBarToTop();
+      sleep(1300);
+      bot.slideSystem.openClamp();
+
+      bot.slideSystem.startRunningLiftsToBottom();
+      bot.intake.stop();
+
+      if (config.getBoolean("optionAPullsFoundation")) {
+        bot.foundationMover.armDown();
+        drive(it -> it.reverse()
+            .forward(8)
+            .splineTo(allianceSpecificPoseFromRed(new Pose2d(32, -47, Math.PI / 4))));
+        drive(it -> it
+            .splineTo(allianceSpecificPoseFromRed(new Pose2d(42, -45, 0))));
+        bot.foundationMover.armUp();
+      }
+
+      while (bot.slideSystem.isLiftRunningToPosition() && !isStopRequested()) ;
+
+      drive(t -> t
+          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-10, -38))));
+
+    } catch (Exception interruption) {
+      Log.e("Autonomous A", interruption.toString());
+      interruption.printStackTrace();
+    } finally {
+      cleanup();
     }
-
-    navToOuterSkystoneTrajectory(result.first);
-
-    bot.slideSystem.prepareToIntake();
-    sleep(100);
-    while (bot.slideSystem.isLiftBusy() && !isStopRequested());
-    if (isStopRequested()) return;
-
-    // intake while moving forward
-    driveBase.followTrajectory(driveBase.trajectoryBuilder().back(9).build());
-    pulseIntake(1500);
-    driveBase.waitForIdle();
-
-    bot.slideSystem.startRunningLiftsToBottom();
-    // Congrats! You should theoretically have a Skystone.
-    strafeHorizontally(false, 17);
-
-    // Prepare to cross the Skybridge
-    while (bot.slideSystem.isLiftBusy() && !isStopRequested());
-    if (isStopRequested()) return;
-
-    bot.slideSystem.relaxLift();
-    bot.slideSystem.closeClamp();
-
-    drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(20, -35)))
-        .addMarker(() -> {
-          bot.slideSystem.setLiftTargetPosition(1200);
-          bot.slideSystem.runLiftsToTargetPosition(1.1);
-          return Unit.INSTANCE;
-        })
-        .splineTo(allianceSpecificPoseFromRed(new Pose2d(40, -24, Math.PI / 2.2)))
-        .forward(3));
-    if (isStopRequested()) return;
-
-    while (bot.slideSystem.isLiftBusy() && !isStopRequested());
-
-    bot.slideSystem.rotateFourBarToRelease();
-    sleep(1300);
-    bot.slideSystem.releaseClamp();
-    sleep(400);
-
-    bot.slideSystem.rotateFourBarToTop();
-    sleep(1300);
-    bot.slideSystem.openClamp();
-
-    bot.slideSystem.startRunningLiftsToBottom();
-
-    if (config.getBoolean("optionAPullsFoundation")) {
-      bot.foundationMover.armDown();
-      drive(it -> it.reverse()
-          .splineTo(allianceSpecificPoseFromRed(new Pose2d(36, -48, 0))));
-      bot.foundationMover.armUp();
-      drive(it -> it.forward(14));
-    }
-
-    while (bot.slideSystem.isLiftBusy() && !isStopRequested());
-
-    drive(t -> t
-        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-12, -37))));
   }
 
-  private void pulseIntake(int ms) {
+  private void pulseIntake(int ms) throws InterruptedException {
     double startTime = getRuntime();
     while ((getRuntime() - startTime) * 1000 < ms && !isStopRequested()) {
       bot.intake.takeIn(config.getDouble("skystoneIntakePower"));
-      sleep(600);
+      sleep(700);
       bot.intake.stop();
-      sleep(200);
+      sleep(50);
+      checkForInterrupt();
     }
   }
 
@@ -196,13 +181,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     detector.open();
   }
 
-  private void initConfig() {
-    try {
-      config = Configuration.fromPropertiesFile("auto.properties");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
+
 
   private void strafeHorizontally(boolean left, double inches) {
     // Note: the boolean left is true if for the RED alliance autonomous, the robot should strafe left
@@ -227,9 +206,6 @@ public abstract class AutoGeneralA extends SkystoneAuto {
       xBeforeIntake = -baseSkystoneXOffset - apparentSkystoneWidth *
           (alliance == AllianceColor.RED ? position.offsetRight() : position.offsetLeft);
     }
-
-    telemetry.addData("xBeforeIntake", xBeforeIntake);
-    telemetry.update();
 
     driveBase.turnSync(allianceSpecificHeadingFromRed(-config.getDouble("intakeAngle")));
 

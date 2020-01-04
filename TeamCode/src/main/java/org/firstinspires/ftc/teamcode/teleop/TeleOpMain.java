@@ -12,10 +12,13 @@ public class TeleOpMain extends OpMode {
   private Bot bot;
   public static double driveSpeed = 1;
   private boolean useSimpleAutomation = true;
+  private boolean useFieldCentric;
 
   @Override
   public void init() {
     bot = Bot.getInstance(this);
+    useFieldCentric = bot.mainConfig.getBoolean("useFieldCentric");
+    bot.slideSystem.relaxLift();
 
     telemetry.addData("TeleOp", "initialized");
     telemetry.addData("left lift position", bot.slideSystem.liftLeft.getMotor().getCurrentPosition());
@@ -36,7 +39,7 @@ public class TeleOpMain extends OpMode {
     long startMillis = System.currentTimeMillis();
 
     adjustDriveSpeed();
-    driveFieldCentric();
+    driveMovement();
     controlFoundationMovers();
     controlIntake();
 
@@ -65,7 +68,7 @@ public class TeleOpMain extends OpMode {
 
   private boolean lastStatusBusy = false;
   private void showLiftStatus() {
-    boolean liftBusy = bot.slideSystem.isLiftBusy();
+    boolean liftBusy = bot.slideSystem.isLiftRunningToPosition();
     if (liftBusy != lastStatusBusy) {
       if (liftBusy) {
         bot.hub1.setLedColor(255, 50, 0);
@@ -109,9 +112,12 @@ public class TeleOpMain extends OpMode {
     }
   }
 
-  private void driveFieldCentric() {
-    Coordinate driveVector = Coordinate.fromXY(gamepad1.left_stick_x, -gamepad1.left_stick_y)
-        .rotate((int) -bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle);
+  private void driveMovement() {
+    Coordinate driveVector = Coordinate.fromXY(gamepad1.left_stick_x, -gamepad1.left_stick_y);
+
+    if (useFieldCentric)
+        driveVector = driveVector.rotate(
+            (int) -bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle);
 
     double microMultiplier = driveSpeed;
     double rotation = gamepad1.right_stick_x * driveSpeed;

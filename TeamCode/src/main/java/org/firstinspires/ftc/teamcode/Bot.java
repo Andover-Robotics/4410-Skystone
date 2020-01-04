@@ -106,7 +106,7 @@ public class Bot {
 
   private void initConfig() {
     try {
-      mainConfig = Configuration.fromPropertiesFile("main.properties");
+      mainConfig = Configuration.fromPropertiesFile("mainConfig.properties");
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

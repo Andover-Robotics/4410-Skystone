@@ -36,6 +36,9 @@ public class LiftStoneLevelDemo extends OpMode {
     telemetry.addData("level", level);
     telemetry.addData("left current pos", bot.slideSystem.liftLeft.getMotor().getCurrentPosition());
     telemetry.addData("right current pos", bot.slideSystem.liftRight.getMotor().getCurrentPosition());
-    telemetry.addData("busy", bot.slideSystem.isLiftBusy());
+    telemetry.addData("busy", bot.slideSystem.isLiftRunningToPosition());
+
+    responder.update();
+    bot.slideSystem.relayLiftDebugDashboard();
   }
 }
