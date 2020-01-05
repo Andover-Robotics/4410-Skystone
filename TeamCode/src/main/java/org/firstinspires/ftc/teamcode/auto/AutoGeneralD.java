@@ -15,7 +15,7 @@ public abstract class AutoGeneralD extends SkystoneAuto {
     // Moves forward
     driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-33, -35)))
-        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(10, -40)))
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(0, -40)))
         .build());
 
     partyUntilItsOver();

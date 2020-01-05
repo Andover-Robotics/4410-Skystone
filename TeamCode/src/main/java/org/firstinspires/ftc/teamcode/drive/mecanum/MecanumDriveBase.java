@@ -34,8 +34,7 @@ import static org.firstinspires.ftc.teamcode.drive.DriveConstants.*;
 @Config
 public abstract class MecanumDriveBase extends MecanumDrive {
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(0, 0, 0);
-    public static PIDCoefficients HEADING_PID = new PIDCoefficients(0, 0, 0);
-
+    public static PIDCoefficients HEADING_PID = new PIDCoefficients(0.18, 0.02, 0.03);
 
     public enum Mode {
         IDLE,
@@ -89,6 +88,7 @@ public abstract class MecanumDriveBase extends MecanumDrive {
                 constraints.maxAngJerk
         );
         turnStart = clock.seconds();
+        turnController.setTargetPosition(heading + angle);
         mode = Mode.TURN;
     }
 
@@ -149,6 +149,9 @@ public abstract class MecanumDriveBase extends MecanumDrive {
                 double targetOmega = targetState.getV();
                 double targetAlpha = targetState.getA();
                 double correction = turnController.update(currentPose.getHeading(), targetOmega);
+
+                packet.put("correction", correction);
+                packet.put("targetOmega", targetOmega);
 
                 setDriveSignal(new DriveSignal(new Pose2d(
                         0, 0, targetOmega + correction

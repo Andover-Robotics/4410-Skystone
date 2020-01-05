@@ -70,6 +70,10 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 
       bot.slideSystem.relaxLift();
       bot.slideSystem.closeClamp();
+      sleep(500);
+      bot.slideSystem.openClamp();
+      sleep(500);
+      bot.slideSystem.closeClamp();
       checkForInterrupt();
 
       drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(20, -40)))
