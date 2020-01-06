@@ -34,7 +34,7 @@ import static org.firstinspires.ftc.teamcode.drive.DriveConstants.*;
 @Config
 public abstract class MecanumDriveBase extends MecanumDrive {
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(0, 0, 0);
-    public static PIDCoefficients HEADING_PID = new PIDCoefficients(0.18, 0.02, 0.03);
+    public static PIDCoefficients HEADING_PID = new PIDCoefficients(0.25, 0.07, 0.04);
 
     public enum Mode {
         IDLE,
@@ -42,7 +42,7 @@ public abstract class MecanumDriveBase extends MecanumDrive {
         FOLLOW_TRAJECTORY
     }
 
-    private FtcDashboard dashboard;
+//    private FtcDashboard dashboard;
     private NanoClock clock;
 
     private Mode mode;
@@ -60,8 +60,8 @@ public abstract class MecanumDriveBase extends MecanumDrive {
     public MecanumDriveBase() {
         super(kV, kA, kStatic, TRACK_WIDTH);
 
-        dashboard = FtcDashboard.getInstance();
-        dashboard.setTelemetryTransmissionInterval(25);
+//        dashboard = FtcDashboard.getInstance();
+//        dashboard.setTelemetryTransmissionInterval(25);
 
         clock = NanoClock.system();
 
@@ -159,7 +159,7 @@ public abstract class MecanumDriveBase extends MecanumDrive {
                         0, 0, targetAlpha
                 )));
 
-                if (t >= turnProfile.duration()) {
+                if (t >= turnProfile.duration() + 0.7) {
                     mode = Mode.IDLE;
                     setDriveSignal(new DriveSignal());
                 }
@@ -191,7 +191,7 @@ public abstract class MecanumDriveBase extends MecanumDrive {
             }
         }
 
-        dashboard.sendTelemetryPacket(packet);
+//        dashboard.sendTelemetryPacket(packet);
     }
 
     public void waitForIdle() {

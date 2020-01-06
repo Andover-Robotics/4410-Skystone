@@ -82,7 +82,7 @@ public class TeleOpMain extends OpMode {
   }
 
   private void controlIntake() {
-    double intakeSpeed = gamepad1.left_trigger * 0.5;
+    double intakeSpeed = gamepad1.left_trigger * 0.7;
     double outtakeSpeed = gamepad1.right_trigger * 0.4;
 
     if (intakeSpeed > 0) {

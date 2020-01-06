@@ -56,7 +56,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 
       // intake while moving forward
       driveBase.setDrivePower(new Pose2d(-(config.getDouble("intakeSpeed")), 0, 0));
-      pulseIntake(2500);
+      pulseIntake(2000);
       driveBase.setDrivePower(new Pose2d(0, 0, 0));
       checkForInterrupt();
 
@@ -78,7 +78,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 
       drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(20, -40)))
           .addMarker(() -> {
-            bot.slideSystem.setLiftTargetPosition(950);
+            bot.slideSystem.setLiftTargetPosition(1300);
             bot.slideSystem.runLiftsToTargetPosition(1.1);
             return Unit.INSTANCE;
           })
