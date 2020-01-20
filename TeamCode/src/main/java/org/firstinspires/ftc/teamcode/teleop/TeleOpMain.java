@@ -13,11 +13,13 @@ public class TeleOpMain extends OpMode {
   public static double driveSpeed = 1;
   private boolean useSimpleAutomation = true;
   private boolean useFieldCentric;
+  private boolean diagnostics;
 
   @Override
   public void init() {
     bot = Bot.getInstance(this);
     useFieldCentric = bot.mainConfig.getBoolean("useFieldCentric");
+    diagnostics = bot.mainConfig.getBoolean("diagnostics");
     bot.slideSystem.relaxLift();
 
     telemetry.addData("TeleOp", "initialized");
@@ -40,8 +42,14 @@ public class TeleOpMain extends OpMode {
 
     adjustDriveSpeed();
     driveMovement();
+    addDiagnosticData("loop timing", "passed driveMovement %d ms since start of iteration",
+        System.currentTimeMillis() - startMillis);
     controlFoundationMovers();
+    addDiagnosticData("loop timing", "passed controlFoundationMovers %d ms since start of iteration",
+        System.currentTimeMillis() - startMillis);
     controlIntake();
+    addDiagnosticData("loop timing", "passed controlIntake %d ms since start of iteration",
+        System.currentTimeMillis() - startMillis);
 
     if (useSimpleAutomation) {
       automateSimply();
@@ -63,6 +71,12 @@ public class TeleOpMain extends OpMode {
     if (gamepad1.right_stick_button) {
       // Reset field centric (set current heading to human heading)
       bot.initImu(this);
+    }
+  }
+
+  private void addDiagnosticData(String title, String content, Object... args) {
+    if (diagnostics) {
+      telemetry.addData(title, content, args);
     }
   }
 
@@ -130,18 +144,22 @@ public class TeleOpMain extends OpMode {
     }
   }
 
+  private boolean liftHoldDesired = false;
   private void automateSimply() {
 
     // left y: lift
     if (Math.abs(gamepad2.left_stick_y) > 0.1) {
+      liftHoldDesired = true;
       bot.slideSystem.setLiftPower(-gamepad2.left_stick_y);
-    } else if (!bot.slideSystem.liftLeft.getMotor().isBusy()) {
+    } else if (liftHoldDesired) {
       bot.slideSystem.holdLiftHeight();
     }
     if (gamepad2.right_bumper) {
       bot.slideSystem.relaxLift();
+      liftHoldDesired = false;
     } else if (gamepad2.left_bumper) {
       bot.slideSystem.startAligningLiftSets();
+      liftHoldDesired = false;
     }
 
     // right y: clamp
@@ -161,10 +179,12 @@ public class TeleOpMain extends OpMode {
     if (gamepad2.a) {
       // Pickup
       bot.slideSystem.prepareToIntake();
+      liftHoldDesired = false;
     }
     if (gamepad2.x) {
       // Delivery
       bot.slideSystem.startRunningLiftsToBottom();
+      liftHoldDesired = false;
     }
     if (gamepad2.y) {
       // Stacking
@@ -175,6 +195,9 @@ public class TeleOpMain extends OpMode {
       bot.slideSystem.startRunningLiftsToBottom();
       bot.slideSystem.releaseClamp();
       bot.slideSystem.rotateFourBarToGrab();
+      liftHoldDesired = false;
     }
+
+    addDiagnosticData("automation", "liftHoldDesired? %s", liftHoldDesired ? "yes" : "no");
   }
 }

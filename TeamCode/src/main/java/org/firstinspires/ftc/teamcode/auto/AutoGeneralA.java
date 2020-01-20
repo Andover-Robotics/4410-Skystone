@@ -4,16 +4,26 @@ import android.util.Log;
 import android.util.Pair;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
-import com.acmerobotics.roadrunner.path.heading.LinearInterpolator;
-import kotlin.Unit;
 import org.firstinspires.ftc.teamcode.util.AllianceColor;
 
 import static org.firstinspires.ftc.teamcode.util.AllianceColor.BLUE;
 import static org.firstinspires.ftc.teamcode.util.AllianceColor.RED;
 
 public abstract class AutoGeneralA extends SkystoneAuto {
+  private enum CrossingVariant {
+    INNER(24 + 12),
+    OUTER(24 + 24 + 12);
+
+    public final double absYOffset;
+
+    CrossingVariant(double absYOffset) {
+      this.absYOffset = absYOffset;
+    }
+  }
 
   private CVSkystoneDetector detector;
+  private CrossingVariant deliverCrossVariant = CrossingVariant.INNER,
+      parkCrossVariant = CrossingVariant.INNER;
 
   public void runForColor(AllianceColor alliance) {
     try {
@@ -21,8 +31,15 @@ public abstract class AutoGeneralA extends SkystoneAuto {
       initFields();
       initCV();
 
-      adjustCvWindowWhileWaitForStart();
-      checkForInterrupt();
+      while (!isStarted()) {
+        adjustCvWindow();
+        adjustAutoVariants();
+        checkForInterrupt();
+
+        idle();
+        sleep(100);
+        telemetry.update();
+      }
 
       driveBase.setPoseEstimate(allianceSpecificPoseFromRed(new Pose2d(-33, -63, Math.PI / 2)));
 
@@ -46,61 +63,28 @@ public abstract class AutoGeneralA extends SkystoneAuto {
         driveBase.turnSync(Math.PI);
       }
 
-      navToOuterSkystoneTrajectory(result.first);
-      checkForInterrupt();
-
-      bot.slideSystem.prepareToIntake();
-      sleep(100);
-      while (bot.slideSystem.isLiftRunningToPosition() && !isStopRequested()) ;
-      checkForInterrupt();
-
-      // intake while moving forward
-      driveBase.setDrivePower(new Pose2d(-(config.getDouble("intakeSpeed")), 0, 0));
-      pulseIntake(2000);
-      driveBase.setDrivePower(new Pose2d(0, 0, 0));
-      checkForInterrupt();
-
-      bot.slideSystem.startRunningLiftsToBottom();
-      strafeHorizontally(false, 20);
-      checkForInterrupt();
-
-      // Prepare to cross the Skybridge
-      while (bot.slideSystem.isLiftRunningToPosition() && !isStopRequested()) ;
-      if (isStopRequested()) return;
-
-      bot.slideSystem.relaxLift();
-      bot.slideSystem.closeClamp();
-      sleep(500);
-      bot.slideSystem.openClamp();
-      sleep(500);
-      bot.slideSystem.closeClamp();
-      checkForInterrupt();
-
-      drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(20, -40)))
-          .addMarker(() -> {
-            bot.slideSystem.setLiftTargetPosition(1300);
-            bot.slideSystem.runLiftsToTargetPosition(1.1);
-            return Unit.INSTANCE;
-          })
-          .splineTo(allianceSpecificPoseFromRed(new Pose2d(34, -30, Math.PI / 2)),
-              new LinearInterpolator(driveBase.getExternalHeading(), allianceSpecificHeadingFromRed(Math.PI / 2)))
-          .forward(3));
-      checkForInterrupt();
-
-      while (bot.slideSystem.isLiftRunningToPosition() && !isStopRequested()) ;
-
-      bot.intake.takeOut(0.6);
-      bot.slideSystem.rotateFourBarToRelease();
-      sleep(1300);
-      bot.slideSystem.releaseClamp();
+      goToQuarryStone(3 + (alliance == RED ? result.first.offsetLeft : result.first.offsetRight()));
+      bot.sideClaw.armDown();
+      sleep(600);
+      bot.sideClaw.clamp();
       sleep(400);
+      bot.sideClaw.armUp();
+      checkForInterrupt();
 
-      bot.slideSystem.rotateFourBarToTop();
-      sleep(1300);
-      bot.slideSystem.openClamp();
+      // Cross Skybridge
+      drive(t -> t
+          .strafeTo(allianceSpecificPositionFromRed(
+              new Vector2d(driveBase.getPoseEstimate().getX(), -deliverCrossVariant.absYOffset)))
+          .strafeTo(allianceSpecificPositionFromRed(
+              new Vector2d(24, -deliverCrossVariant.absYOffset)))
+          .strafeTo(allianceSpecificPositionFromRed(
+              new Vector2d(24, 33))));
 
-      bot.slideSystem.startRunningLiftsToBottom();
-      bot.intake.stop();
+
+      checkForInterrupt();
+
+      bot.sideClaw.release();
+      bot.sideClaw.armUp();
 
       if (config.getBoolean("optionAPullsFoundation")) {
         bot.foundationMover.armDown();
@@ -112,10 +96,10 @@ public abstract class AutoGeneralA extends SkystoneAuto {
         bot.foundationMover.armUp();
       }
 
-      while (bot.slideSystem.isLiftRunningToPosition() && !isStopRequested()) ;
-
+      // Cross Skybridge again?
       drive(t -> t
-          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-10, -38))));
+          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(driveBase.getPoseEstimate().getX(), -parkCrossVariant.absYOffset)))
+          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(0, -parkCrossVariant.absYOffset))));
 
     } catch (Exception interruption) {
       Log.e("Autonomous A", interruption.toString());
@@ -136,19 +120,40 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     }
   }
 
-  private void adjustCvWindowWhileWaitForStart() {
-    while (!isStarted()) {
-      adjustCvWindow();
-      idle();
+  private void adjustAutoVariants() {
+    telemetry.addLine("variant control")
+        .addData("A", "deliver inner")
+        .addData("B", "deliver outer")
+        .addData("X", "park inner")
+        .addData("Y", "park outer");
 
-      sleep(200);
-      telemetry.update();
+    if (gamepad1.a) {       // Cross inside         «DEFAULT»
+      deliverCrossVariant = CrossingVariant.INNER;
     }
+    if (gamepad1.b) {       // Cross outside
+      deliverCrossVariant = CrossingVariant.OUTER;
+    }
+    if (gamepad1.x) {       // Park inside          «DEFAULT»
+      parkCrossVariant = CrossingVariant.INNER;
+    }
+    if (gamepad1.y) {       // Park outside
+      parkCrossVariant = CrossingVariant.OUTER;
+    }
+    telemetry.addData("Crossing", deliverCrossVariant)
+        .addData("Parking", parkCrossVariant);
+  }
+
+  //
+  private void goToQuarryStone(int nthFromOutermost) {
+    drive(t -> t.strafeTo(allianceSpecificPositionFromRed(
+        new Vector2d(-24 * 3 + 9 + 8 * nthFromOutermost, 34))));
+
+    driveBase.turnToSync(alliance == RED ? Math.PI : 0);
   }
 
   private void adjustCvWindow() {
     // Window Controls:
-    //      gamempad1 left joystick is x-y movement
+    //      gamepad1 left joystick is x-y movement
     //      Dpad up     - increase box height
     //      Dpad down   - decrease box height
     //      Dpad right  - increase box width
@@ -184,7 +189,6 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     }
     detector.open();
   }
-
 
 
   private void strafeHorizontally(boolean left, double inches) {

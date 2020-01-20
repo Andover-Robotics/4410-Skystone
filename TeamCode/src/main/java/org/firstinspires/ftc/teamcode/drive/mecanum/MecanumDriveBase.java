@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.drive.mecanum;
 
-import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -11,9 +10,6 @@ import com.acmerobotics.roadrunner.drive.MecanumDrive;
 import com.acmerobotics.roadrunner.followers.HolonomicPIDVAFollower;
 import com.acmerobotics.roadrunner.followers.TrajectoryFollower;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.acmerobotics.roadrunner.profile.MotionProfile;
-import com.acmerobotics.roadrunner.profile.MotionProfileGenerator;
-import com.acmerobotics.roadrunner.profile.MotionState;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.acmerobotics.roadrunner.trajectory.constraints.DriveConstraints;
@@ -48,8 +44,7 @@ public abstract class MecanumDriveBase extends MecanumDrive {
     private Mode mode;
 
     private PIDFController turnController;
-    private MotionProfile turnProfile;
-    private double turnStart;
+    private double turnTarget;
 
     private DriveConstraints constraints;
     private TrajectoryFollower follower;
@@ -78,22 +73,25 @@ public abstract class MecanumDriveBase extends MecanumDrive {
         return new TrajectoryBuilder(getPoseEstimate(), constraints);
     }
 
+    // warning: prefer turnTo in OpModes
     public void turn(double angle) {
         double heading = getPoseEstimate().getHeading();
-        turnProfile = MotionProfileGenerator.generateSimpleMotionProfile(
-                new MotionState(heading, 0, 0, 0),
-                new MotionState(heading + angle, 0, 0, 0),
-                constraints.maxAngVel,
-                constraints.maxAngAccel,
-                constraints.maxAngJerk
-        );
-        turnStart = clock.seconds();
-        turnController.setTargetPosition(heading + angle);
+        turnTo(heading + angle);
+    }
+
+    public void turnTo(double angle) {
+        turnTarget = angle;
+        turnController.setTargetPosition(turnTarget);
         mode = Mode.TURN;
     }
 
     public void turnSync(double angle) {
         turn(angle);
+        waitForIdle();
+    }
+
+    public void turnToSync(double angle) {
+        turnTo(angle);
         waitForIdle();
     }
 
@@ -143,25 +141,17 @@ public abstract class MecanumDriveBase extends MecanumDrive {
                 // do nothing
                 break;
             case TURN: {
-                double t = clock.seconds() - turnStart;
-
-                MotionState targetState = turnProfile.get(t);
-                double targetOmega = targetState.getV();
-                double targetAlpha = targetState.getA();
-                double correction = turnController.update(currentPose.getHeading(), targetOmega);
+                double correction = turnController.update(currentPose.getHeading());
 
                 packet.put("correction", correction);
-                packet.put("targetOmega", targetOmega);
 
                 setDriveSignal(new DriveSignal(new Pose2d(
-                        0, 0, targetOmega + correction
-                ), new Pose2d(
-                        0, 0, targetAlpha
+                        0, 0, correction
                 )));
 
-                if (t >= turnProfile.duration() + 0.7) {
-                    mode = Mode.IDLE;
+                if (Math.abs(currentPose.getHeading() - turnTarget) < 2) {
                     setDriveSignal(new DriveSignal());
+                    mode = Mode.IDLE;
                 }
 
                 break;
@@ -208,7 +198,7 @@ public abstract class MecanumDriveBase extends MecanumDrive {
         List<Double> positions = getWheelPositions();
         double currentTimestamp = clock.seconds();
 
-        List<Double> velocities = new ArrayList<>(positions.size());;
+        List<Double> velocities = new ArrayList<>(positions.size());
         if (lastWheelPositions != null) {
             double dt = currentTimestamp - lastTimestamp;
             for (int i = 0; i < positions.size(); i++) {

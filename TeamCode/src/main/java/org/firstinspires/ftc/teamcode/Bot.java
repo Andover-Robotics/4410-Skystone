@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.teamcode.hardware.FoundationMover;
 import org.firstinspires.ftc.teamcode.hardware.Intake;
+import org.firstinspires.ftc.teamcode.hardware.SideClaw;
 import org.firstinspires.ftc.teamcode.hardware.SlideSystem;
 import org.firstinspires.ftc.teamcode.util.AxesSigns;
 import org.firstinspires.ftc.teamcode.util.BNO055IMUUtil;
@@ -43,6 +44,7 @@ public class Bot {
   public final FoundationMover foundationMover;
   public final SlideSystem slideSystem;
   public final ExpansionHubEx hub1, hub2;
+  public final SideClaw sideClaw;
   public BNO055IMU imu;
 
   public Configuration mainConfig;
@@ -85,6 +87,8 @@ public class Bot {
 
     hub1 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 1");
     hub2 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 2");
+
+    sideClaw = new SideClaw(opMode.hardwareMap.servo.get("sideClawArm"));
 
     instance = this;
     initImu(opMode);
