@@ -1,11 +1,14 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
 import com.andoverrobotics.core.utilities.Coordinate;
+import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Bot;
 import org.openftc.revextensions2.ExpansionHubEx;
+
+import java.util.List;
 
 @TeleOp(name = "4410-2020 TeleOp", group = "Competition")
 public class TeleOpMain extends OpMode {
@@ -15,17 +18,32 @@ public class TeleOpMain extends OpMode {
   private boolean useFieldCentric;
   private boolean diagnostics;
 
+  private List<LynxModule> hubs;
+
   @Override
   public void init() {
     bot = Bot.getInstance(this);
     useFieldCentric = bot.mainConfig.getBoolean("useFieldCentric");
     diagnostics = bot.mainConfig.getBoolean("diagnostics");
     bot.slideSystem.relaxLift();
+    hubs = hardwareMap.getAll(LynxModule.class);
+
+    if (bot.mainConfig.getBoolean("useBuiltInBulkRead")) {
+      setBulkReadMode(LynxModule.BulkCachingMode.MANUAL);
+    } else {
+      setBulkReadMode(LynxModule.BulkCachingMode.OFF);
+    }
 
     telemetry.addData("TeleOp", "initialized");
     telemetry.addData("left lift position", bot.slideSystem.liftLeft.getMotor().getCurrentPosition());
     telemetry.addData("right lift position", bot.slideSystem.liftRight.getMotor().getCurrentPosition());
     telemetry.update();
+  }
+
+  private void setBulkReadMode(LynxModule.BulkCachingMode mode) {
+    for (LynxModule module : hubs) {
+      module.setBulkCachingMode(mode);
+    }
   }
 
   public void init_loop() {
@@ -38,6 +56,10 @@ public class TeleOpMain extends OpMode {
 
   @Override
   public void loop() {
+    for (LynxModule module : hubs) {
+      module.clearBulkCache();
+    }
+
     long startMillis = System.currentTimeMillis();
 
     adjustDriveSpeed();
@@ -50,6 +72,7 @@ public class TeleOpMain extends OpMode {
     controlIntake();
     addDiagnosticData("loop timing", "passed controlIntake %d ms since start of iteration",
         System.currentTimeMillis() - startMillis);
+    controlSideClaw();
 
     if (useSimpleAutomation) {
       automateSimply();
@@ -71,6 +94,21 @@ public class TeleOpMain extends OpMode {
     if (gamepad1.right_stick_button) {
       // Reset field centric (set current heading to human heading)
       bot.initImu(this);
+    }
+  }
+
+  private void controlSideClaw() {
+    if (gamepad1.y) {
+      bot.sideClaw.armUp();
+    }
+    if (gamepad1.a) {
+      bot.sideClaw.armDown();
+    }
+    if (gamepad1.x) {
+      bot.sideClaw.clamp();
+    }
+    if (gamepad1.b) {
+      bot.sideClaw.release();
     }
   }
 
@@ -176,26 +214,28 @@ public class TeleOpMain extends OpMode {
     // right x: four bar
     bot.slideSystem.setFourBarSpeed(gamepad2.right_stick_x);
 
-    if (gamepad2.a) {
-      // Pickup
-      bot.slideSystem.prepareToIntake();
-      liftHoldDesired = false;
-    }
-    if (gamepad2.x) {
-      // Delivery
-      bot.slideSystem.startRunningLiftsToBottom();
-      liftHoldDesired = false;
-    }
-    if (gamepad2.y) {
-      // Stacking
-      bot.slideSystem.rotateFourBarToRelease();
-    }
-    if (gamepad2.b) {
-      // Return
-      bot.slideSystem.startRunningLiftsToBottom();
-      bot.slideSystem.releaseClamp();
-      bot.slideSystem.rotateFourBarToGrab();
-      liftHoldDesired = false;
+    if (!gamepad2.start) {
+      if (gamepad2.a) {
+        // Pickup
+        bot.slideSystem.prepareToIntake();
+        liftHoldDesired = false;
+      }
+      if (gamepad2.x) {
+        // Delivery
+        bot.slideSystem.startRunningLiftsToBottom();
+        liftHoldDesired = false;
+      }
+      if (gamepad2.y) {
+        // Stacking
+        bot.slideSystem.rotateFourBarToRelease();
+      }
+      if (gamepad2.b) {
+        // Return
+        bot.slideSystem.closeClamp();
+        bot.slideSystem.startRunningLiftsToBottom();
+        bot.slideSystem.rotateFourBarToGrab();
+        liftHoldDesired = false;
+      }
     }
 
     addDiagnosticData("automation", "liftHoldDesired? %s", liftHoldDesired ? "yes" : "no");

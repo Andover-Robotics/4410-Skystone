@@ -6,13 +6,15 @@ import org.firstinspires.ftc.teamcode.ConfigUser;
 public class SideClaw extends ConfigUser<SideClaw.Configuration> {
   public static class Configuration {
     public double armUpPosition, armDownPosition;
+    public double clampClosedPosition, clampOpenPosition, clampFoldedPosition;
   }
 
-  private Servo arm;
+  private Servo arm, clamp;
 
-  public SideClaw(Servo arm) {
+  public SideClaw(Servo arm, Servo clamp) {
     super("sideClaw.properties", new Configuration());
     this.arm = arm;
+    this.clamp = clamp;
   }
 
   public void armUp() {
@@ -24,10 +26,10 @@ public class SideClaw extends ConfigUser<SideClaw.Configuration> {
   }
 
   public void clamp() {
-    // do nothing
+    clamp.setPosition(config.clampClosedPosition);
   }
 
   public void release() {
-    // do nothing
+    clamp.setPosition(config.clampOpenPosition);
   }
 }

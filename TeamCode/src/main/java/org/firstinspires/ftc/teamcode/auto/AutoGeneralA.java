@@ -41,11 +41,14 @@ public abstract class AutoGeneralA extends SkystoneAuto {
         telemetry.update();
       }
 
-      driveBase.setPoseEstimate(allianceSpecificPoseFromRed(new Pose2d(-33, -63, Math.PI / 2)));
+      // We will always start with left (phone) facing stones
+      driveBase.setPoseEstimate(new Pose2d(
+          allianceSpecificPositionFromRed(new Vector2d(-33, -63)),
+          alliance == RED ? 0 : Math.PI
+      ));
 
       // Align phone with target
-      drive(it -> it.forward(8));
-      driveBase.turnSync(-Math.PI / 2);
+      drive(it -> it.strafeLeft(8));
       checkForInterrupt();
 
       if (gamepad1.back) return;
@@ -54,14 +57,13 @@ public abstract class AutoGeneralA extends SkystoneAuto {
       Pair<StonePosition, Double> result = detector.estimatedSkystonePosition();
       telemetry.addData("position", result.first);
       telemetry.addData("confidence", "%.5f", result.second);
+      telemetry.speak("I detected a skystone at " + result.first);
       telemetry.update();
       Log.v("Autonomous A", "position sensed: " + result.first);
 
       detector.close();
 
-      if (alliance == BLUE) {
-        driveBase.turnSync(Math.PI);
-      }
+      driveBase.turnSync(Math.PI);
 
       goToQuarryStone(3 + (alliance == RED ? result.first.offsetLeft : result.first.offsetRight()));
       bot.sideClaw.armDown();
@@ -78,12 +80,13 @@ public abstract class AutoGeneralA extends SkystoneAuto {
           .strafeTo(allianceSpecificPositionFromRed(
               new Vector2d(24, -deliverCrossVariant.absYOffset)))
           .strafeTo(allianceSpecificPositionFromRed(
-              new Vector2d(24, 33))));
-
-
+              new Vector2d(24, -33))));
       checkForInterrupt();
 
+      bot.sideClaw.armDown();
+      sleep(600);
       bot.sideClaw.release();
+      sleep(400);
       bot.sideClaw.armUp();
 
       if (config.getBoolean("optionAPullsFoundation")) {

@@ -88,7 +88,9 @@ public class Bot {
     hub1 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 1");
     hub2 = opMode.hardwareMap.get(ExpansionHubEx.class, "Expansion Hub 2");
 
-    sideClaw = new SideClaw(opMode.hardwareMap.servo.get("sideClawArm"));
+    sideClaw = new SideClaw(
+        opMode.hardwareMap.servo.get("sideClawArm"),
+        opMode.hardwareMap.servo.get("sideClawClamp"));
 
     instance = this;
     initImu(opMode);

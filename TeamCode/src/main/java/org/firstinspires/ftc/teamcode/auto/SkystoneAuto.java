@@ -84,7 +84,7 @@ public abstract class SkystoneAuto extends LinearOpMode {
       int second;
 
       playMusicIfEnabled();
-      bot.slideSystem.rotateFourBarToTop();
+      bot.slideSystem.rotateFourBarFullyIn();
 
       // 20 iterations per second
       while (getRuntime() < 30 && !isStopRequested()) {

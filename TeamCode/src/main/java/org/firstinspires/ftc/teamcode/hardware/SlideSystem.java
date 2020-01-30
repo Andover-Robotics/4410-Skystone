@@ -9,7 +9,6 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.teamcode.ConfigUser;
 
 import java.util.Arrays;
-import java.util.concurrent.Executor;
 
 public class SlideSystem extends ConfigUser<SlideSystem.Config> {
   public static class Config {
@@ -39,7 +38,7 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
     // More predictable
     setupLiftMotors(liftLeft, liftRight);
 
-    clamp.scaleRange(config.clampOpenPosition, config.clampClosedPosition);
+    clamp.scaleRange(config.clampClosedPosition, config.clampOpenPosition);
     fourBar.scaleRange(config.fourBarFullyInPosition, config.fourBarFullyOutPosition);
   }
 
@@ -62,8 +61,8 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
 
   public void prepareToIntake() {
     relaxLift();
-    setLiftTargetPosition(config.intakeLiftHeightTicks);
-    runLiftsToTargetPosition(1);
+//    setLiftTargetPosition(config.intakeLiftHeightTicks);
+//    runLiftsToTargetPosition(1);
     openClamp();
     rotateFourBarToGrab();
   }
@@ -208,7 +207,7 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
     fourBar.setPosition(config.fourBarGrabPosition);
   }
 
-  public void rotateFourBarToTop() {
+  public void rotateFourBarFullyIn() {
     fourBar.setPosition(0);
   }
 
