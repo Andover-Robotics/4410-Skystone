@@ -99,7 +99,7 @@ public class TeleOpMain extends OpMode {
 
   private void controlSideClaw() {
     if (gamepad1.y) {
-      bot.sideClaw.armUp();
+      bot.sideClaw.armDisabled();
     }
     if (gamepad1.a) {
       bot.sideClaw.armDown();

@@ -11,7 +11,7 @@ import static org.firstinspires.ftc.teamcode.util.AllianceColor.RED;
 
 public abstract class AutoGeneralA extends SkystoneAuto {
   private enum CrossingVariant {
-    INNER(24 + 12),
+    INNER(24 + 12 + 2),
     OUTER(24 + 24 + 12);
 
     public final double absYOffset;
@@ -24,6 +24,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
   private CVSkystoneDetector detector;
   private CrossingVariant deliverCrossVariant = CrossingVariant.INNER,
       parkCrossVariant = CrossingVariant.INNER;
+  private boolean getSecondSkystoneIfPossible = false;
 
   public void runForColor(AllianceColor alliance) {
     try {
@@ -65,38 +66,30 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 
       driveBase.turnSync(Math.PI);
 
-      goToQuarryStone(3 + (alliance == RED ? result.first.offsetLeft : result.first.offsetRight()));
-      bot.sideClaw.armDown();
-      sleep(600);
-      bot.sideClaw.clamp();
-      sleep(400);
-      bot.sideClaw.armUp();
-      checkForInterrupt();
+      int skystoneOffset = alliance == RED ? result.first.offsetLeft : result.first.offsetRight();
 
-      // Cross Skybridge
-      drive(t -> t
-          .strafeTo(allianceSpecificPositionFromRed(
-              new Vector2d(driveBase.getPoseEstimate().getX(), -deliverCrossVariant.absYOffset)))
-          .strafeTo(allianceSpecificPositionFromRed(
-              new Vector2d(24, -deliverCrossVariant.absYOffset)))
-          .strafeTo(allianceSpecificPositionFromRed(
-              new Vector2d(24, -33))));
-      checkForInterrupt();
+      deliverStone(3 + skystoneOffset);
 
-      bot.sideClaw.armDown();
-      sleep(600);
-      bot.sideClaw.release();
-      sleep(400);
-      bot.sideClaw.armUp();
+//      if (config.getBoolean("optionAPullsFoundation")) {
+//        bot.foundationMover.armDown();
+//        drive(it -> it.reverse()
+//            .forward(8)
+//            .splineTo(allianceSpecificPoseFromRed(new Pose2d(32, -47, Math.PI / 4))));
+//        drive(it -> it
+//            .splineTo(allianceSpecificPoseFromRed(new Pose2d(42, -45, 0))));
+//        bot.foundationMover.armUp();
+//      }
 
-      if (config.getBoolean("optionAPullsFoundation")) {
-        bot.foundationMover.armDown();
-        drive(it -> it.reverse()
-            .forward(8)
-            .splineTo(allianceSpecificPoseFromRed(new Pose2d(32, -47, Math.PI / 4))));
-        drive(it -> it
-            .splineTo(allianceSpecificPoseFromRed(new Pose2d(42, -45, 0))));
-        bot.foundationMover.armUp();
+      boolean secondSkystoneNextToFieldWall = (alliance == RED && result.first == StonePosition.LEFT) ||
+          (alliance == BLUE && result.first == StonePosition.RIGHT);
+      if (getSecondSkystoneIfPossible && !secondSkystoneNextToFieldWall) {
+        drive(t -> t
+            .strafeTo(allianceSpecificPositionFromRed(
+                new Vector2d(driveBase.getPoseEstimate().getX(), -(deliverCrossVariant.absYOffset + 0.5))))
+            .strafeTo(allianceSpecificPositionFromRed(
+                new Vector2d(-12, -deliverCrossVariant.absYOffset))));
+
+        deliverStone(skystoneOffset);
       }
 
       // Cross Skybridge again?
@@ -110,6 +103,37 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     } finally {
       cleanup();
     }
+  }
+
+  private void deliverStone(int nthStoneFromWall) throws InterruptedException {
+    bot.sideClaw.foldClamp();
+    bot.sideClaw.armDown();
+    sleep(800);
+    goToQuarryStone(nthStoneFromWall);
+    drive(it -> it.strafeRight(4));
+    bot.sideClaw.clamp();
+    sleep(1400);
+    bot.sideClaw.armDisabled();
+    checkForInterrupt();
+
+    // Cross Skybridge
+    drive(t -> t
+        .strafeTo(allianceSpecificPositionFromRed(
+            new Vector2d(driveBase.getPoseEstimate().getX(), -(deliverCrossVariant.absYOffset + 0.5))))
+        .strafeTo(allianceSpecificPositionFromRed(
+            new Vector2d(24, -deliverCrossVariant.absYOffset)))
+        .strafeTo(allianceSpecificPositionFromRed(
+            new Vector2d(24, -33))));
+    checkForInterrupt();
+
+    bot.sideClaw.armDown();
+    sleep(600);
+    bot.sideClaw.release();
+    sleep(400);
+    bot.sideClaw.armUp();
+    // So that it does not touch the Skybridge when parked
+    bot.sideClaw.foldClamp();
+    checkForInterrupt();
   }
 
   private void pulseIntake(int ms) throws InterruptedException {
@@ -128,7 +152,8 @@ public abstract class AutoGeneralA extends SkystoneAuto {
         .addData("A", "deliver inner")
         .addData("B", "deliver outer")
         .addData("X", "park inner")
-        .addData("Y", "park outer");
+        .addData("Y", "park outer")
+        .addData("Right bumper", "get second Skystone if possible");
 
     if (gamepad1.a) {       // Cross inside         «DEFAULT»
       deliverCrossVariant = CrossingVariant.INNER;
@@ -142,14 +167,17 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     if (gamepad1.y) {       // Park outside
       parkCrossVariant = CrossingVariant.OUTER;
     }
+    if (gamepad1.right_bumper) {
+      getSecondSkystoneIfPossible = true;
+    }
     telemetry.addData("Crossing", deliverCrossVariant)
-        .addData("Parking", parkCrossVariant);
+        .addData("Parking", parkCrossVariant)
+        .addData("2nd Skystone", getSecondSkystoneIfPossible ? "yes" : "no");
   }
 
-  //
   private void goToQuarryStone(int nthFromOutermost) {
     drive(t -> t.strafeTo(allianceSpecificPositionFromRed(
-        new Vector2d(-24 * 3 + 9 + 8 * nthFromOutermost, 34))));
+        new Vector2d(-24 * 3 + 4.3 + 8 * nthFromOutermost, -33.6))));
 
     driveBase.turnToSync(alliance == RED ? Math.PI : 0);
   }
@@ -184,10 +212,10 @@ public abstract class AutoGeneralA extends SkystoneAuto {
   private void initCV() {
     detector = new CVSkystoneDetector(hardwareMap);
     if (alliance == BLUE) {
-      detector.config.stoneWidth = 236;
-      detector.config.stoneHeight = 131;
-      detector.config.leftStoneMidX = 359;
-      detector.config.leftStoneMidY = 223;
+      detector.config.stoneWidth = 207;
+      detector.config.stoneHeight = 101;
+      detector.config.leftStoneMidX = 390;
+      detector.config.leftStoneMidY = 401;
       // TODO reflect this in config files
     }
     detector.open();

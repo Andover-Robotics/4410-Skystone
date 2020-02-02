@@ -29,8 +29,8 @@ import static org.firstinspires.ftc.teamcode.drive.DriveConstants.*;
  */
 @Config
 public abstract class MecanumDriveBase extends MecanumDrive {
-    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(0, 0, 0);
-    public static PIDCoefficients HEADING_PID = new PIDCoefficients(0.25, 0.07, 0.04);
+    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(0.5, 0, 0);
+    public static PIDCoefficients HEADING_PID = new PIDCoefficients(1.8, 0.2, 0.1);//2.3 0.25 0.55
 
     public enum Mode {
         IDLE,
@@ -45,6 +45,7 @@ public abstract class MecanumDriveBase extends MecanumDrive {
 
     private PIDFController turnController;
     private double turnTarget;
+    private double turnStartTime;
 
     private DriveConstraints constraints;
     private TrajectoryFollower follower;
@@ -81,7 +82,10 @@ public abstract class MecanumDriveBase extends MecanumDrive {
 
     public void turnTo(double angle) {
         turnTarget = angle;
+        // Don't retain the integral sum from the previous turn
+        turnController.reset();
         turnController.setTargetPosition(turnTarget);
+        turnStartTime = NanoClock.system().seconds();
         mode = Mode.TURN;
     }
 
@@ -149,7 +153,8 @@ public abstract class MecanumDriveBase extends MecanumDrive {
                         0, 0, correction
                 )));
 
-                if (Math.abs(currentPose.getHeading() - turnTarget) < 2) {
+                if (Math.abs(currentPose.getHeading() - turnTarget) < Math.toRadians(2.5) ||
+                    NanoClock.system().seconds() - turnStartTime > 6) {
                     setDriveSignal(new DriveSignal());
                     mode = Mode.IDLE;
                 }
