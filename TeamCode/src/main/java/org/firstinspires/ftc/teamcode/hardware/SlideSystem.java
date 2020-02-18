@@ -118,13 +118,6 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
     runLiftsToTargetPosition(1);
   }
 
-  public void startRunningLiftsToLevel(int level) {
-    int targetPosition = liftTarget(level);
-    Log.v("SlideSystem", "lift target is " + targetPosition);
-    setLiftTargetPosition(targetPosition);
-    runLiftsToTargetPosition(1);
-  }
-
   public void startRunningLiftsToBottom() {
     relaxLift();
     setLiftTargetPosition(0);
@@ -139,13 +132,6 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
         rightError = Math.abs(rightPos - liftRight.getTargetPosition());
 
     return Math.max(leftError, rightError) > 50;
-  }
-
-  private int liftTarget(int level) {
-    if (level == 0) {
-      return config.intakeLiftHeightTicks;
-    }
-    return Math.max((level - 1) * config.ticksPerLevel + config.liftLevelOffset, 1000);
   }
 
   private boolean liftHeld = false;
@@ -180,7 +166,7 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
   }
 
   public void openClamp() {
-    setClampPosition(0);
+    setClampPosition(1);
   }
 
   public void releaseClamp() {
@@ -188,7 +174,7 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
   }
 
   public void closeClamp() {
-    setClampPosition(1);
+    setClampPosition(0);
   }
 
   public void setClampPosition(double position) {
@@ -209,6 +195,10 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
 
   public void rotateFourBarFullyIn() {
     fourBar.setPosition(0);
+  }
+
+  public void rotateFourBarFullyOut() {
+    fourBar.setPosition(1);
   }
 
   public void rotateFourBarToRelease() {

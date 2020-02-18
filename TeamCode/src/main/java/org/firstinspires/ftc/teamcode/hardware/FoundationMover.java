@@ -12,40 +12,27 @@ public class FoundationMover extends ConfigUser<FoundationMover.ConfigSchema> {
     public double scaleRangeMin, scaleRangeMax;
   }
 
-  public CRServo armLeft, armRight;
+  public Servo armLeft, armRight;
 
-  public FoundationMover(CRServo armLeft, CRServo armRight) {
+  public FoundationMover(Servo armLeft, Servo armRight) {
     super("foundationMover.properties", new ConfigSchema());
 
     this.armLeft = armLeft;
     this.armRight = armRight;
 
-//    armRight.setDirection(DcMotorSimple.Direction.REVERSE);
-  }
-
-  public void setPower(double power) {
-    armLeft.setPower(power);
-    armRight.setPower(-power);
+    armRight.setDirection(Servo.Direction.REVERSE);
+    armLeft.scaleRange(config.scaleRangeMin, config.scaleRangeMax);
+    armRight.scaleRange(config.scaleRangeMin, config.scaleRangeMax);
   }
 
   public void armDown() {
-    setPower(1);
-    try {
-      Thread.sleep(800);
-    } catch (InterruptedException e) {
-      return;
-    }
-    setPower(0);
+    armLeft.setPosition(1);
+    armRight.setPosition(1);
   }
 
 
   public void armUp() {
-    setPower(-1);
-    try {
-      Thread.sleep(800);
-    } catch (InterruptedException e) {
-      return;
-    }
-    setPower(0);
+    armLeft.setPosition(0);
+    armRight.setPosition(0);
   }
 }

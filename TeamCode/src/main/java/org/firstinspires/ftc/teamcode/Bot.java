@@ -76,8 +76,8 @@ public class Bot {
         motor(opMode, "intakeRight"));
 
     foundationMover = new FoundationMover(
-        opMode.hardwareMap.crservo.get("foundationLeft"),
-        opMode.hardwareMap.crservo.get("foundationRight"));
+        opMode.hardwareMap.servo.get("foundationLeft"),
+        opMode.hardwareMap.servo.get("foundationRight"));
 
     slideSystem = new SlideSystem(
         opMode.hardwareMap.dcMotor.get("liftL"),

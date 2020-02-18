@@ -148,11 +148,9 @@ public class TeleOpMain extends OpMode {
 
   private void controlFoundationMovers() {
     if (gamepad1.left_bumper) {
-      bot.foundationMover.setPower(0.6);
+      bot.foundationMover.armDown();
     } else if (gamepad1.right_bumper) {
-      bot.foundationMover.setPower(-0.6);
-    } else {
-      bot.foundationMover.setPower(0);
+      bot.foundationMover.armUp();
     }
   }
 
@@ -202,7 +200,7 @@ public class TeleOpMain extends OpMode {
 
     // right y: clamp
     if (gamepad2.right_stick_y < -0.2) {
-      bot.slideSystem.setClampSpeed(gamepad2.right_stick_y);
+      bot.slideSystem.setClampSpeed(-gamepad2.right_stick_y);
     }
     else if (gamepad2.right_stick_y > 0.3) {
       bot.slideSystem.closeClamp();
@@ -217,21 +215,20 @@ public class TeleOpMain extends OpMode {
     if (!gamepad2.start) {
       if (gamepad2.a) {
         // Pickup
-        bot.slideSystem.prepareToIntake();
-        liftHoldDesired = false;
+        bot.slideSystem.rotateFourBarFullyIn();
+        bot.slideSystem.closeClamp();
       }
       if (gamepad2.x) {
-        // Delivery
-        bot.slideSystem.startRunningLiftsToBottom();
-        liftHoldDesired = false;
+        // Stacking level 0
+        bot.slideSystem.rotateFourBarFullyOut();
       }
       if (gamepad2.y) {
-        // Stacking
+        // Stacking level 1+
         bot.slideSystem.rotateFourBarToRelease();
       }
       if (gamepad2.b) {
-        // Return
-        bot.slideSystem.closeClamp();
+        // Return & prep for pickup
+        bot.slideSystem.openClamp();
         bot.slideSystem.startRunningLiftsToBottom();
         bot.slideSystem.rotateFourBarToGrab();
         liftHoldDesired = false;

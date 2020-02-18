@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.drive.mecanum;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -16,6 +17,7 @@ import com.acmerobotics.roadrunner.trajectory.constraints.DriveConstraints;
 import com.acmerobotics.roadrunner.trajectory.constraints.MecanumConstraints;
 import com.acmerobotics.roadrunner.util.NanoClock;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.util.DashboardUtil;
 
 import java.util.ArrayList;
@@ -29,8 +31,8 @@ import static org.firstinspires.ftc.teamcode.drive.DriveConstants.*;
  */
 @Config
 public abstract class MecanumDriveBase extends MecanumDrive {
-    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(0.5, 0, 0);
-    public static PIDCoefficients HEADING_PID = new PIDCoefficients(1.8, 0.2, 0.1);//2.3 0.25 0.55
+    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(4, 0.2, 0);
+    public static PIDCoefficients HEADING_PID = new PIDCoefficients(2.5, 0.2, 0.0);//2.3 0.25 0.55
 
     public enum Mode {
         IDLE,
@@ -38,7 +40,7 @@ public abstract class MecanumDriveBase extends MecanumDrive {
         FOLLOW_TRAJECTORY
     }
 
-//    private FtcDashboard dashboard;
+    private FtcDashboard dashboard;
     private NanoClock clock;
 
     private Mode mode;
@@ -56,8 +58,8 @@ public abstract class MecanumDriveBase extends MecanumDrive {
     public MecanumDriveBase() {
         super(kV, kA, kStatic, TRACK_WIDTH);
 
-//        dashboard = FtcDashboard.getInstance();
-//        dashboard.setTelemetryTransmissionInterval(25);
+        dashboard = FtcDashboard.getInstance();
+        dashboard.setTelemetryTransmissionInterval(25);
 
         clock = NanoClock.system();
 
@@ -153,7 +155,10 @@ public abstract class MecanumDriveBase extends MecanumDrive {
                         0, 0, correction
                 )));
 
-                if (Math.abs(currentPose.getHeading() - turnTarget) < Math.toRadians(2.5) ||
+                double error = Math.abs(AngleUnit.normalizeRadians(currentPose.getHeading()) -
+                    AngleUnit.normalizeRadians(turnTarget));
+
+                if (error < Math.toRadians(2) || Math.abs(error - 2*Math.PI) < Math.toRadians(2) ||
                     NanoClock.system().seconds() - turnStartTime > 6) {
                     setDriveSignal(new DriveSignal());
                     mode = Mode.IDLE;
@@ -186,7 +191,7 @@ public abstract class MecanumDriveBase extends MecanumDrive {
             }
         }
 
-//        dashboard.sendTelemetryPacket(packet);
+        dashboard.sendTelemetryPacket(packet);
     }
 
     public void waitForIdle() {

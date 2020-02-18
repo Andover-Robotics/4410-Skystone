@@ -27,7 +27,8 @@ public class LiftStoneLevelDemo extends OpMode {
         .addData("bumpers", "software stop");
 
     if (gamepad1.x) {
-      bot.slideSystem.startRunningLiftsToLevel(level);
+      // TODO stacker demo
+//      bot.slideSystem.startRunningLiftsToLevel(level);
     }
     if (gamepad1.left_bumper || gamepad1.right_bumper) {
       bot.slideSystem.relaxLift();

@@ -5,7 +5,7 @@ import org.firstinspires.ftc.teamcode.ConfigUser;
 
 public class SideClaw extends ConfigUser<SideClaw.Configuration> {
   public static class Configuration {
-    public double armUpPosition, armDownPosition, armDisabledPosition;
+    public double armUpPosition, armDownPosition, armReleasePosition, armDisabledPosition;
     public double clampClosedPosition, clampOpenPosition, clampFoldedPosition;
   }
 
@@ -27,6 +27,10 @@ public class SideClaw extends ConfigUser<SideClaw.Configuration> {
 
   public void armDown() {
     arm.setPosition(config.armDownPosition);
+  }
+
+  public void armRelease() {
+    arm.setPosition(config.armReleasePosition);
   }
 
   public void clamp() {
