@@ -32,7 +32,7 @@ import static org.firstinspires.ftc.teamcode.drive.DriveConstants.*;
 @Config
 public abstract class MecanumDriveBase extends MecanumDrive {
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(4, 0.2, 0);
-    public static PIDCoefficients HEADING_PID = new PIDCoefficients(2.5, 0.2, 0.0);//2.3 0.25 0.55
+    public static PIDCoefficients HEADING_PID = new PIDCoefficients(2.2, 0.2, 0.0);//2.3 0.25 0.55
 
     public enum Mode {
         IDLE,

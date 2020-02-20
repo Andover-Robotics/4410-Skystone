@@ -9,7 +9,7 @@ public class FoundationMover extends ConfigUser<FoundationMover.ConfigSchema> {
 
   public static class ConfigSchema {
     public boolean leftReverse;
-    public double scaleRangeMin, scaleRangeMax;
+    public int leftOperatingRange, rightOperatingRange;
   }
 
   public Servo armLeft, armRight;
@@ -20,19 +20,25 @@ public class FoundationMover extends ConfigUser<FoundationMover.ConfigSchema> {
     this.armLeft = armLeft;
     this.armRight = armRight;
 
-    armRight.setDirection(Servo.Direction.REVERSE);
-    armLeft.scaleRange(config.scaleRangeMin, config.scaleRangeMax);
-    armRight.scaleRange(config.scaleRangeMin, config.scaleRangeMax);
+    if (config.leftReverse) {
+      armLeft.setDirection(Servo.Direction.REVERSE);
+    } else {
+      armRight.setDirection(Servo.Direction.REVERSE);
+    }
   }
 
   public void armDown() {
-    armLeft.setPosition(1);
-    armRight.setPosition(1);
+    armLeft.setPosition(convertDegrees(0, config.leftOperatingRange));
+    armRight.setPosition(convertDegrees(0, config.rightOperatingRange));
   }
 
 
   public void armUp() {
-    armLeft.setPosition(0);
-    armRight.setPosition(0);
+    armLeft.setPosition(convertDegrees(120, config.leftOperatingRange));
+    armRight.setPosition(convertDegrees(120, config.rightOperatingRange));
+  }
+
+  private double convertDegrees(int degrees, int operatingRange) {
+    return (double) degrees / operatingRange;
   }
 }
