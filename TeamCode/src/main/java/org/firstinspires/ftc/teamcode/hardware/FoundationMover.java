@@ -28,14 +28,14 @@ public class FoundationMover extends ConfigUser<FoundationMover.ConfigSchema> {
   }
 
   public void armDown() {
-    armLeft.setPosition(convertDegrees(0, config.leftOperatingRange));
-    armRight.setPosition(convertDegrees(0, config.rightOperatingRange));
+    armLeft.setPosition(convertDegrees(120, config.leftOperatingRange));
+    armRight.setPosition(convertDegrees(120, config.rightOperatingRange));
   }
 
 
   public void armUp() {
-    armLeft.setPosition(convertDegrees(120, config.leftOperatingRange));
-    armRight.setPosition(convertDegrees(120, config.rightOperatingRange));
+    armLeft.setPosition(convertDegrees(0, config.leftOperatingRange));
+    armRight.setPosition(convertDegrees(0, config.rightOperatingRange));
   }
 
   private double convertDegrees(int degrees, int operatingRange) {

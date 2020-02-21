@@ -15,6 +15,7 @@ public class SideClaw extends ConfigUser<SideClaw.Configuration> {
     super("sideClaw.properties", new Configuration());
     this.arm = arm;
     this.clamp = clamp;
+    arm.setDirection(Servo.Direction.REVERSE);
   }
 
   public void armDisabled() {
