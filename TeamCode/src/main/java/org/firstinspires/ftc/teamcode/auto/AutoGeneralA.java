@@ -5,6 +5,7 @@ import android.util.Pair;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.path.heading.LinearInterpolator;
+import com.acmerobotics.roadrunner.trajectory.BaseTrajectoryBuilder;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.acmerobotics.roadrunner.trajectory.constraints.DriveConstraints;
@@ -53,7 +54,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
         driveBase.setPoseEstimate(new Pose2d(-33, -63, 0));
       } else {
         // To facilitate different starting positions
-        driveBase.setPoseEstimate(new Pose2d(-30, 63, Math.PI));
+        driveBase.setPoseEstimate(new Pose2d(-30.8, 63, Math.PI));
       }
       checkForInterrupt();
 
@@ -71,26 +72,14 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 
       int skystoneOffset = alliance == RED ? result.first.offsetLeft : result.first.offsetRight();
 
-      deliverStone(3 + skystoneOffset, 1);
-
-//      if (config.getBoolean("optionAPullsFoundation")) {
-//        bot.foundationMover.armDown();
-//        drive(it -> it.reverse()
-//            .forward(8)
-//            .splineTo(allianceSpecificPoseFromRed(new Pose2d(32, -47, Math.PI / 4))));
-//        drive(it -> it
-//            .splineTo(allianceSpecificPoseFromRed(new Pose2d(42, -45, 0))));
-//        bot.foundationMover.armUp();
-//      }
+      deliverStone(null, 3 + skystoneOffset, 1);
 
       boolean secondSkystoneNextToFieldWall = (alliance == RED && result.first == StonePosition.LEFT) ||
           (alliance == BLUE && result.first == StonePosition.RIGHT);
       if (getSecondSkystoneIfPossible && !secondSkystoneNextToFieldWall) {
-        drive(t -> t
+        deliverStone(driveBase.trajectoryBuilder()
             .strafeTo(allianceSpecificPositionFromRed(
-                new Vector2d(driveBase.getPoseEstimate().getX(), -(deliverCrossVariant.absYOffset + 0.5)))));
-
-        deliverStone(skystoneOffset, 2);
+                new Vector2d(0, -(deliverCrossVariant.absYOffset + 3)))), skystoneOffset, 2);
       }
 
       repositionFoundation();
@@ -99,7 +88,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 //      drive(t -> t
 //          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(driveBase.getPoseEstimate().getX(), -parkCrossVariant.absYOffset)))
 //          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(0, -parkCrossVariant.absYOffset))));
-      drive(t -> t.back(38));
+      drive(t -> t.back(30));
 
     } catch (Exception interruption) {
       Log.e("Autonomous A", interruption.toString());
@@ -109,33 +98,38 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     }
   }
 
-  private void deliverStone(int nthStoneFromWall, int nth) throws InterruptedException {
+  private void deliverStone(BaseTrajectoryBuilder trajectoryBeforeGo, int nthStoneFromWall, int nth) throws InterruptedException {
     bot.sideClaw.armDisabled();
     bot.sideClaw.clamp();
-    goToQuarryStoneAndLowerSideClaw(nthStoneFromWall);
+    goToQuarryStoneAndLowerSideClaw(trajectoryBeforeGo, nthStoneFromWall);
     driveBase.setDrivePower(new Pose2d(0, -0.19));
     sleep(450);
     bot.sideClaw.clamp();
     sleep(450);
     driveBase.setDrivePower(new Pose2d(0, 0));
     bot.sideClaw.armDisabled();
-//    driveBase.turnToSync(alliance == RED ? Math.PI : 0);
+    double heading = alliance == RED ? Math.PI : 0;
+//    driveBase.turnToSync(heading);
     checkForInterrupt();
     int depositX = 25 + nth * 8;
 
     // Cross Skybridge
     if (crossSkybridgeWithSplines) {
-      drive(t -> t.splineTo(allianceSpecificPoseFromRed(
-          new Pose2d(depositX, -deliverCrossVariant.absYOffset, driveBase.getExternalHeading()))));
+      drive(t -> t
+          .setReversed(alliance == RED)
+          .splineTo(allianceSpecificPoseFromRed(
+              new Pose2d(-5, -(deliverCrossVariant.absYOffset + 3), heading)))
+          .lineTo(allianceSpecificPositionFromRed(
+              new Vector2d(5, -(deliverCrossVariant.absYOffset + 3))))
+          .splineTo(allianceSpecificPoseFromRed(
+              new Pose2d(depositX, -36, heading))));
+
+
     } else {
       drive(t -> t
-          .strafeTo(allianceSpecificPositionFromRed(
-              new Vector2d(driveBase.getPoseEstimate().getX(), -(deliverCrossVariant.absYOffset + 3)))));
-      drive(t -> t
-          .strafeTo(allianceSpecificPositionFromRed(
-              new Vector2d(depositX, -deliverCrossVariant.absYOffset)))
-          .strafeTo(allianceSpecificPositionFromRed(
-              new Vector2d(depositX, -30))));
+          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-5, -(deliverCrossVariant.absYOffset + 2))))
+          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(5, -(deliverCrossVariant.absYOffset + 2))))
+          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(depositX, -33))));
     }
     checkForInterrupt();
 
@@ -163,7 +157,8 @@ public abstract class AutoGeneralA extends SkystoneAuto {
         .addData("B", "deliver outer")
         .addData("X", "park inner")
         .addData("Y", "park outer")
-        .addData("Right bumper", "get second Skystone if possible");
+        .addData("Right bumper", "get second Skystone if possible")
+        .addData("Left bumper", "use splines");
 
     if (gamepad1.a) {       // Cross inside         «DEFAULT»
       deliverCrossVariant = CrossingVariant.INNER;
@@ -189,15 +184,15 @@ public abstract class AutoGeneralA extends SkystoneAuto {
         .addData("splines", crossSkybridgeWithSplines ? "enabled" : "disabled");
   }
 
-  private void goToQuarryStoneAndLowerSideClaw(int nthFromOutermost) {
+  private void goToQuarryStoneAndLowerSideClaw(BaseTrajectoryBuilder prevTrajectory, int nthFromOutermost) {
     double targetHeading = alliance == RED ? Math.PI : (driveBase.getExternalHeading() < Math.PI ? 0 : 2 * Math.PI);
-      Vector2d targetPos = allianceSpecificPositionFromRed(new Vector2d(-24 * 3 + 4.5 + 8.02 * nthFromOutermost, -34.9));
-    drive(t -> t.lineTo(targetPos,
+      Vector2d targetPos = allianceSpecificPositionFromRed(new Vector2d(-24 * 3 + 4.5 + 8 * nthFromOutermost, -34.9));
+    drive(t -> (prevTrajectory == null ? t : prevTrajectory).lineTo(targetPos,
         new LinearInterpolator(driveBase.getExternalHeading(), targetHeading - driveBase.getExternalHeading())));
     bot.sideClaw.release();
     sleep(300);
     bot.sideClaw.armDown();
-    drive(t -> t.strafeTo(targetPos));
+//    drive(t -> t.strafeTo(targetPos));
     driveBase.turnToSync(targetHeading);
   }
 
@@ -264,22 +259,24 @@ public abstract class AutoGeneralA extends SkystoneAuto {
   private void repositionFoundation() {
     bot.foundationMover.armUp();
     driveBase.turnToSync(allianceSpecificHeadingFromRed(Math.PI / 2));
-    drive(it -> it.strafeTo(allianceSpecificPositionFromRed(new Vector2d(36, -24))));
-    driveBase.setDrivePower(new Pose2d(0.2, 0, 0));
+    drive(it -> it.strafeTo(allianceSpecificPositionFromRed(new Vector2d(41, -24))));
+    driveBase.setDrivePower(new Pose2d(0.1, 0, 0.02));
     sleep(150);
-    driveBase.setDrivePower(new Pose2d(0.15, 0, 0));
+    driveBase.setDrivePower(new Pose2d(0.1, 0, 0.06));
     bot.foundationMover.armDown();
-    sleep(400);
+    sleep(500);
 
     driveBase.followTrajectorySync(new TrajectoryBuilder(driveBase.getPoseEstimate(), new DriveConstraints(
-        40, 20, 0, Math.PI/4, Math.PI/6, 0))
+        50, 20, 0, Math.PI/3, Math.PI/6, 0))
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(36, -36)))
-        .lineTo(allianceSpecificPositionFromRed(new Vector2d(26, -36)),
+        .lineTo(allianceSpecificPositionFromRed(new Vector2d(22, -41)),
             new LinearInterpolator(allianceSpecificHeadingFromRed(Math.PI / 2),
                 -allianceSpecificHeadingFromRed(Math.PI / 2)))
         .build());
 
     bot.foundationMover.armUp();
-    sleep(500);
+    bot.sideClaw.clamp();
+    driveBase.setDrivePower(new Pose2d(0.27, 0));
+    sleep(800);
   }
 }
