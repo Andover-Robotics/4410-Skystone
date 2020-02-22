@@ -6,10 +6,14 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.path.heading.LinearInterpolator;
 import com.acmerobotics.roadrunner.trajectory.BaseTrajectoryBuilder;
-import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.acmerobotics.roadrunner.trajectory.constraints.DriveConstraints;
+import kotlin.Unit;
+import org.firstinspires.ftc.robotcore.external.Predicate;
+import org.firstinspires.ftc.teamcode.teleop.TeleOpMain;
 import org.firstinspires.ftc.teamcode.util.AllianceColor;
+
+import java.util.function.Supplier;
 
 import static org.firstinspires.ftc.teamcode.util.AllianceColor.BLUE;
 import static org.firstinspires.ftc.teamcode.util.AllianceColor.RED;
@@ -54,8 +58,11 @@ public abstract class AutoGeneralA extends SkystoneAuto {
         driveBase.setPoseEstimate(new Pose2d(-33, -63, 0));
       } else {
         // To facilitate different starting positions
-        driveBase.setPoseEstimate(new Pose2d(-30.8, 63, Math.PI));
+        driveBase.setPoseEstimate(new Pose2d(-31, 63, Math.PI));
       }
+      // We are 90deg clockwise from the drivers' view
+      TeleOpMain.fieldCentricDelta = 90;
+
       checkForInterrupt();
 
       if (gamepad1.back) return;
@@ -140,14 +147,12 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     checkForInterrupt();
   }
 
-  private void pulseIntake(int ms) throws InterruptedException {
+  private void pulseIntake(int timeout, Supplier<Boolean> stop) {
+    final int hz = 3;
     double startTime = getRuntime();
-    while ((getRuntime() - startTime) * 1000 < ms && !isStopRequested()) {
-      bot.intake.takeIn(config.getDouble("skystoneIntakePower"));
-      sleep(700);
-      bot.intake.stop();
-      sleep(50);
-      checkForInterrupt();
+    while ((getRuntime() - startTime) * 1000 < timeout && !isStopRequested() && !stop.get()) {
+      double dt = getRuntime() - startTime;
+      bot.intake.takeIn(Math.cos(dt * 2 * Math.PI * hz) * 0.3 + 0.4);
     }
   }
 
@@ -235,48 +240,32 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     detector.open();
   }
 
-  private void navToOuterSkystoneTrajectory(StonePosition position) {
-    double baseSkystoneXOffset = config.getDouble("baseSkystoneXOffset");
-    double apparentSkystoneWidth = config.getDouble("apparentSkystoneWidth");
+  private void deliverFieldWallStone() {
+    // Go to the stone
+    drive(t -> t
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(5, -(deliverCrossVariant.absYOffset + 2))))
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-12, -(deliverCrossVariant.absYOffset + 2))))
+        .lineTo(allianceSpecificPositionFromRed(new Vector2d(-24 * 3 + 8 + 9.5, -29)),
+            new LinearInterpolator(alliance == RED ? Math.PI : 0, alliance == RED ? Math.PI : 0)));
 
-    double xBeforeIntake;
-    boolean takeInnerSkystone = (alliance == RED && position == StonePosition.LEFT) ||
-        (alliance == BLUE && position == StonePosition.RIGHT);
+    // Intake the stone
+    driveBase.setDrivePower(new Pose2d(-0.15, 0, 0));
+    pulseIntake(4000, () -> bot.loadSensor.stonePresent());
 
-    if (takeInnerSkystone) {
-      xBeforeIntake = -baseSkystoneXOffset + apparentSkystoneWidth;
-    } else {
-      xBeforeIntake = -baseSkystoneXOffset - apparentSkystoneWidth *
-          (alliance == AllianceColor.RED ? position.offsetRight() : position.offsetLeft);
-    }
+    // Go to the foundation
+    drive(t -> t
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-10, -(deliverCrossVariant.absYOffset + 2))))
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(10, -(deliverCrossVariant.absYOffset + 2))))
+        .addMarker(() -> {
+          bot.slideSystem.rotateFourBarToRelease();
+          return Unit.INSTANCE;
+        })
+        .lineTo(allianceSpecificPositionFromRed(new Vector2d(35, -31.5)),
+            new LinearInterpolator(0, allianceSpecificHeadingFromRed(Math.PI / 2))));
 
-    driveBase.turnSync(allianceSpecificHeadingFromRed(-config.getDouble("intakeAngle")));
-
-    drive(it -> it.strafeTo(allianceSpecificPositionFromRed(
-        new Vector2d(xBeforeIntake, -(config.getDouble("quarryY"))))));
+    // Release the stone
+    bot.slideSystem.releaseClamp();
+    sleep(250);
   }
 
-  private void repositionFoundation() {
-    bot.foundationMover.armUp();
-    driveBase.turnToSync(allianceSpecificHeadingFromRed(Math.PI / 2));
-    drive(it -> it.strafeTo(allianceSpecificPositionFromRed(new Vector2d(41, -24))));
-    driveBase.setDrivePower(new Pose2d(0.1, 0, 0.02));
-    sleep(150);
-    driveBase.setDrivePower(new Pose2d(0.1, 0, 0.06));
-    bot.foundationMover.armDown();
-    sleep(500);
-
-    driveBase.followTrajectorySync(new TrajectoryBuilder(driveBase.getPoseEstimate(), new DriveConstraints(
-        50, 20, 0, Math.PI/3, Math.PI/6, 0))
-        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(36, -36)))
-        .lineTo(allianceSpecificPositionFromRed(new Vector2d(22, -41)),
-            new LinearInterpolator(allianceSpecificHeadingFromRed(Math.PI / 2),
-                -allianceSpecificHeadingFromRed(Math.PI / 2)))
-        .build());
-
-    bot.foundationMover.armUp();
-    bot.sideClaw.clamp();
-    driveBase.setDrivePower(new Pose2d(0.27, 0));
-    sleep(800);
-  }
 }

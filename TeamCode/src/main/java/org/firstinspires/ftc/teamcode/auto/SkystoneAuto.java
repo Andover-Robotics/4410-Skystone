@@ -3,8 +3,10 @@ package org.firstinspires.ftc.teamcode.auto;
 import android.media.MediaPlayer;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.acmerobotics.roadrunner.path.heading.LinearInterpolator;
 import com.acmerobotics.roadrunner.trajectory.BaseTrajectoryBuilder;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
+import com.acmerobotics.roadrunner.trajectory.constraints.DriveConstraints;
 import com.andoverrobotics.core.config.Configuration;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.Bot;
@@ -121,5 +123,30 @@ public abstract class SkystoneAuto extends LinearOpMode {
     if (Thread.currentThread().isInterrupted() || isStopRequested()) {
       throw new InterruptedException("aborted");
     }
+  }
+
+  // Shared between A and C
+  protected void repositionFoundation() {
+    bot.foundationMover.armUp();
+    driveBase.turnToSync(allianceSpecificHeadingFromRed(Math.PI / 2));
+    drive(it -> it.strafeTo(allianceSpecificPositionFromRed(new Vector2d(41, -24))));
+    driveBase.setDrivePower(new Pose2d(0.1, 0, 0.02));
+    sleep(110);
+    driveBase.setDrivePower(new Pose2d(0.08, 0, 0.08));
+    bot.foundationMover.armDown();
+    sleep(500);
+
+    driveBase.followTrajectorySync(new TrajectoryBuilder(driveBase.getPoseEstimate(), new DriveConstraints(
+        50, 20, 0, Math.PI/3, Math.PI/6, 0))
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(36, -36)))
+        .lineTo(allianceSpecificPositionFromRed(new Vector2d(22, -41)),
+            new LinearInterpolator(allianceSpecificHeadingFromRed(Math.PI / 2),
+                -allianceSpecificHeadingFromRed(Math.PI / 2)))
+        .build());
+
+    bot.foundationMover.armUp();
+    bot.sideClaw.clamp();
+    driveBase.setDrivePower(new Pose2d(0.27, 0));
+    sleep(800);
   }
 }

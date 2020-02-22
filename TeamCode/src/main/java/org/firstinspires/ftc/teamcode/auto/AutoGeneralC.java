@@ -14,19 +14,7 @@ public abstract class AutoGeneralC extends SkystoneAuto {
         driveBase.setPoseEstimate(
                 allianceSpecificPoseFromRed(new Pose2d(33, -63, Math.PI / 2)));
 
-        // Drive to the foundation
-        driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
-                .strafeTo(allianceSpecificPositionFromRed(new Vector2d(51, -30)))
-                .build());
-
-        bot.foundationMover.armDown();
-
-        // Pull the foundation to the build site
-        driveBase.followTrajectorySync(driveBase.trajectoryBuilder()
-                .strafeTo(allianceSpecificPositionFromRed(new Vector2d(51, -70)))
-                .build());
-
-        bot.foundationMover.armUp();
+        repositionFoundation();
 
         // Park under the SkyBridge
         driveBase.followTrajectorySync(driveBase.trajectoryBuilder()

@@ -8,11 +8,9 @@ import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.teamcode.hardware.FoundationMover;
-import org.firstinspires.ftc.teamcode.hardware.Intake;
-import org.firstinspires.ftc.teamcode.hardware.SideClaw;
-import org.firstinspires.ftc.teamcode.hardware.SlideSystem;
+import org.firstinspires.ftc.teamcode.hardware.*;
 import org.firstinspires.ftc.teamcode.util.AxesSigns;
 import org.firstinspires.ftc.teamcode.util.BNO055IMUUtil;
 import org.openftc.revextensions2.ExpansionHubEx;
@@ -45,6 +43,7 @@ public class Bot {
   public final SlideSystem slideSystem;
   public final ExpansionHubEx hub1, hub2;
   public final SideClaw sideClaw;
+  public final LoadSensor loadSensor;
   public BNO055IMU imu;
 
   public Configuration mainConfig;
@@ -91,6 +90,8 @@ public class Bot {
     sideClaw = new SideClaw(
         opMode.hardwareMap.servo.get("sideClawArm"),
         opMode.hardwareMap.servo.get("sideClawClamp"));
+
+    loadSensor = new LoadSensor(opMode.hardwareMap.get(DistanceSensor.class, "loadSensor"));
 
     instance = this;
     initImu(opMode);

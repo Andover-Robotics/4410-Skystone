@@ -14,6 +14,7 @@ import java.util.List;
 public class TeleOpMain extends OpMode {
   private Bot bot;
   public static double driveSpeed = 1;
+  public static int fieldCentricDelta = 0;
   private boolean useSimpleAutomation = true;
   private boolean useFieldCentric;
   private boolean diagnostics;
@@ -93,7 +94,7 @@ public class TeleOpMain extends OpMode {
 
     if (gamepad1.right_stick_button) {
       // Reset field centric (set current heading to human heading)
-      bot.initImu(this);
+      fieldCentricDelta = (int) bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle;
     }
   }
 
@@ -167,7 +168,7 @@ public class TeleOpMain extends OpMode {
 
     if (useFieldCentric)
         driveVector = driveVector.rotate(
-            (int) -bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle);
+            (int) -bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle + fieldCentricDelta);
 
     double microMultiplier = driveSpeed;
     double rotation = gamepad1.right_stick_x * driveSpeed;
@@ -223,7 +224,7 @@ public class TeleOpMain extends OpMode {
         bot.slideSystem.rotateFourBarFullyOut();
       }
       if (gamepad2.y) {
-        // Stacking level 1+
+        // Stacking level 2+
         bot.slideSystem.rotateFourBarToRelease();
       }
       if (gamepad2.b) {
