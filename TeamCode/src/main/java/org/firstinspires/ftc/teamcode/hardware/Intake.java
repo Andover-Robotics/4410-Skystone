@@ -3,8 +3,10 @@ package org.firstinspires.ftc.teamcode.hardware;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-public class Intake {
+import java.time.Clock;
 
+public class Intake {
+  private long pulseStartMillis = System.currentTimeMillis();
   private final DcMotor leftWheel, rightWheel;
 
   public Intake(DcMotor flyWheelLeft, DcMotor flyWheelRight) {
@@ -20,6 +22,15 @@ public class Intake {
 
     leftWheel.setPower(power);
     rightWheel.setPower(power);
+  }
+
+  public void startPulse() {
+    pulseStartMillis = System.currentTimeMillis();
+  }
+
+  public void pulse(double power, double variance, double hz) {
+    long dt = System.currentTimeMillis() - pulseStartMillis;
+    spin(Math.cos(dt * 2*Math.PI * hz) * variance + power);
   }
 
   public void takeIn(double power) {

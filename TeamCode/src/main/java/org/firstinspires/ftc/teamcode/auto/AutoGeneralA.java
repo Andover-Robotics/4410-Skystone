@@ -154,12 +154,13 @@ public abstract class AutoGeneralA extends SkystoneAuto {
   }
 
   private void pulseIntake(int timeout, Supplier<Boolean> stop) {
-    final int hz = 3;
     double startTime = getRuntime();
+    bot.intake.startPulse();
+
     while ((getRuntime() - startTime) * 1000 < timeout && !isStopRequested() && !stop.get()) {
-      double dt = getRuntime() - startTime;
-      bot.intake.takeIn(Math.cos(dt * 2 * Math.PI * hz) * 0.2 + 0.35);
+      bot.intake.pulse(0.35, 0.2, 3);
     }
+
     bot.intake.stop();
   }
 

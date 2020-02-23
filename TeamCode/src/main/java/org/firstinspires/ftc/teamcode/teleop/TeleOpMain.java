@@ -28,6 +28,7 @@ public class TeleOpMain extends OpMode {
     diagnostics = bot.mainConfig.getBoolean("diagnostics");
     bot.slideSystem.relaxLift();
     hubs = hardwareMap.getAll(LynxModule.class);
+    stacker = new Stacker(bot);
 
     if (bot.mainConfig.getBoolean("useBuiltInBulkRead")) {
       setBulkReadMode(LynxModule.BulkCachingMode.MANUAL);
@@ -55,6 +56,12 @@ public class TeleOpMain extends OpMode {
     }
   }
 
+  public void start() {
+    bot.slideSystem.rotateFourBarToGrab();
+    bot.slideSystem.openClamp();
+    bot.sideClaw.armDisabled();
+  }
+
   @Override
   public void loop() {
     for (LynxModule module : hubs) {
@@ -74,19 +81,16 @@ public class TeleOpMain extends OpMode {
     addDiagnosticData("loop timing", "passed controlIntake %d ms since start of iteration",
         System.currentTimeMillis() - startMillis);
     controlSideClaw();
+    controlIntakePulse();
 
-    if (useSimpleAutomation) {
-      automateSimply();
-      bot.slideSystem.relayLiftDebugDashboard();
-    } else {
-      ControlState.runLoop(this);
-      ControlState.updateStage(this);
-    }
+    automateSimply();
+    controlStacker();
+    bot.slideSystem.relayLiftDebugDashboard();
 
     showLiftStatus();
 
     telemetry.addData("cycle period", "%d ms", System.currentTimeMillis() - startMillis);
-    telemetry.addData("current control state", ControlState.currentStage);
+    telemetry.addData("stacker level", "%d", stacker.getLevel());
     telemetry.addData("drive speed", "%.3f", driveSpeed);
     telemetry.addData("current draw 1", bot.hub1.getTotalModuleCurrentDraw(ExpansionHubEx.CurrentDrawUnits.AMPS));
     telemetry.addData("current draw 2", bot.hub2.getTotalModuleCurrentDraw(ExpansionHubEx.CurrentDrawUnits.AMPS));
@@ -136,13 +140,13 @@ public class TeleOpMain extends OpMode {
 
   private void controlIntake() {
     double intakeSpeed = gamepad1.left_trigger * 0.7;
-    double outtakeSpeed = gamepad1.right_trigger * 0.4;
+    double outtakeSpeed = gamepad1.right_trigger * 0.5;
 
     if (intakeSpeed > 0) {
       bot.intake.takeIn(intakeSpeed);
     } else if (outtakeSpeed > 0) {
       bot.intake.takeOut(outtakeSpeed);
-    } else {
+    } else if (!intakePulseDesired) {
       bot.intake.stop();
     }
   }
@@ -157,9 +161,22 @@ public class TeleOpMain extends OpMode {
 
   private void adjustDriveSpeed() {
     if (gamepad1.back) {
-      driveSpeed = 0.3;
+      driveSpeed = 0.45;
     } else if (gamepad1.start) {
       driveSpeed = 1;
+    }
+  }
+
+  private boolean intakePulseDesired = false;
+  private void controlIntakePulse() {
+    if (gamepad1.dpad_down) {
+      intakePulseDesired = true;
+    } else if (bot.loadSensor.stonePresent() || gamepad1.left_trigger > 0.1 || gamepad1.right_trigger > 0.1) {
+      intakePulseDesired = false;
+    }
+
+    if (intakePulseDesired) {
+      bot.intake.pulse(0.4, 0.2, 3.2);
     }
   }
 
@@ -237,5 +254,19 @@ public class TeleOpMain extends OpMode {
     }
 
     addDiagnosticData("automation", "liftHoldDesired? %s", liftHoldDesired ? "yes" : "no");
+  }
+
+  private Stacker stacker;
+  private void controlStacker() {
+    if (gamepad2.dpad_down) {
+      liftHoldDesired = false;
+      stacker.goBackToLevelZero();
+    } else if (gamepad2.dpad_up) {
+      liftHoldDesired = false;
+      stacker.goToNextLevel();
+    } else if (gamepad2.dpad_right) {
+      liftHoldDesired = false;
+      stacker.goToSameLevel();
+    }
   }
 }

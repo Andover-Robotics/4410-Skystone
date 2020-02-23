@@ -1,11 +1,18 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Bot;
 
 /**
  * Facilitates stacking by memorizing the current level, etc.
  */
 public class Stacker {
+  private static final double TICKS_PER_REV = 537.6;
+  private static final double LEVEL_HEIGHT = 4, SPOOL_CIRCUMFERENCE = 38 / DistanceUnit.mmPerInch * Math.PI;
+
+  // ticks/rev * rev/in = ticks/in
+  private static final double kTicksPerLevel = TICKS_PER_REV / SPOOL_CIRCUMFERENCE * LEVEL_HEIGHT;
+
   private final Bot bot;
   private int level = 0;
 
@@ -18,7 +25,7 @@ public class Stacker {
   }
 
   public void goToNextLevel() {
-    if (level < 6) level++;
+    if (level < 9) level++;
     runToLevel();
   }
 
@@ -33,9 +40,9 @@ public class Stacker {
 
   private void runToLevel() {
     // To be extra sure, we send two identical commands for redundancy...?
-    bot.slideSystem.setLiftTargetPosition(150 * level);
-    bot.slideSystem.setLiftTargetPosition(150 * level);
-    bot.slideSystem.runLiftsToTargetPosition(0.5);
+    bot.slideSystem.setLiftTargetPosition((int) (kTicksPerLevel * level));
+    bot.slideSystem.setLiftTargetPosition((int) (kTicksPerLevel * level));
+    bot.slideSystem.runLiftsToTargetPosition(0.9);
 
     if (level == 0) {
       bot.slideSystem.rotateFourBarFullyOut();
