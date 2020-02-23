@@ -83,10 +83,16 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 
       boolean secondSkystoneNextToFieldWall = (alliance == RED && result.first == StonePosition.LEFT) ||
           (alliance == BLUE && result.first == StonePosition.RIGHT);
-      if (getSecondSkystoneIfPossible && !secondSkystoneNextToFieldWall) {
-        deliverStone(driveBase.trajectoryBuilder()
-            .strafeTo(allianceSpecificPositionFromRed(
-                new Vector2d(0, -(deliverCrossVariant.absYOffset + 3)))), skystoneOffset, 2);
+      if (getSecondSkystoneIfPossible) {
+        bot.sideClaw.clamp();
+        sleep(300);
+        if (secondSkystoneNextToFieldWall) {
+          deliverFieldWallStone();
+        } else {
+          deliverStone(driveBase.trajectoryBuilder()
+              .strafeTo(allianceSpecificPositionFromRed(
+                  new Vector2d(0, -(deliverCrossVariant.absYOffset + 3)))), skystoneOffset, 2);
+        }
       }
 
       repositionFoundation();
@@ -136,13 +142,13 @@ public abstract class AutoGeneralA extends SkystoneAuto {
       drive(t -> t
           .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-5, -(deliverCrossVariant.absYOffset + 2))))
           .strafeTo(allianceSpecificPositionFromRed(new Vector2d(5, -(deliverCrossVariant.absYOffset + 2))))
-          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(depositX, -33))));
+          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(depositX, -32.5))));
     }
     checkForInterrupt();
 
     bot.sideClaw.armRelease();
     bot.sideClaw.release();
-    sleep(300);
+    sleep(250);
     bot.sideClaw.armDisabled();
     checkForInterrupt();
   }
@@ -152,8 +158,9 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     double startTime = getRuntime();
     while ((getRuntime() - startTime) * 1000 < timeout && !isStopRequested() && !stop.get()) {
       double dt = getRuntime() - startTime;
-      bot.intake.takeIn(Math.cos(dt * 2 * Math.PI * hz) * 0.3 + 0.4);
+      bot.intake.takeIn(Math.cos(dt * 2 * Math.PI * hz) * 0.2 + 0.35);
     }
+    bot.intake.stop();
   }
 
   private void adjustAutoVariants() {
@@ -241,31 +248,43 @@ public abstract class AutoGeneralA extends SkystoneAuto {
   }
 
   private void deliverFieldWallStone() {
+
     // Go to the stone
+    final int fieldWallIntakeX = -24 * 3 + 8 + 13;
     drive(t -> t
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(5, -(deliverCrossVariant.absYOffset + 2))))
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-12, -(deliverCrossVariant.absYOffset + 2))))
-        .lineTo(allianceSpecificPositionFromRed(new Vector2d(-24 * 3 + 8 + 9.5, -29)),
+        .lineTo(allianceSpecificPositionFromRed(new Vector2d(-24 * 3 + 8 + 18, -(deliverCrossVariant.absYOffset + 2))),
             new LinearInterpolator(alliance == RED ? Math.PI : 0, alliance == RED ? Math.PI : 0)));
+    drive(t -> t
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(fieldWallIntakeX, -21))));
+    bot.slideSystem.rotateFourBarToGrab();
 
     // Intake the stone
-    driveBase.setDrivePower(new Pose2d(-0.15, 0, 0));
-    pulseIntake(4000, () -> bot.loadSensor.stonePresent());
+    driveBase.setDrivePower(new Pose2d(-0.1, 0, 0));
+    pulseIntake(3000, () -> bot.loadSensor.stonePresent());
 
     // Go to the foundation
+    bot.slideSystem.rotateFourBarFullyIn();
+    drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(fieldWallIntakeX, -(deliverCrossVariant.absYOffset + 2)))));
     drive(t -> t
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-10, -(deliverCrossVariant.absYOffset + 2))))
-        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(10, -(deliverCrossVariant.absYOffset + 2))))
+        .addMarker(() -> {
+          bot.slideSystem.closeClamp();
+          return Unit.INSTANCE;
+        })
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(15, -(deliverCrossVariant.absYOffset + 2))))
         .addMarker(() -> {
           bot.slideSystem.rotateFourBarToRelease();
           return Unit.INSTANCE;
         })
-        .lineTo(allianceSpecificPositionFromRed(new Vector2d(35, -31.5)),
+        .lineTo(allianceSpecificPositionFromRed(new Vector2d(49, -31.5)),
             new LinearInterpolator(0, allianceSpecificHeadingFromRed(Math.PI / 2))));
 
     // Release the stone
     bot.slideSystem.releaseClamp();
-    sleep(250);
+    sleep(400);
+    bot.slideSystem.rotateFourBarFullyIn();
   }
 
 }
