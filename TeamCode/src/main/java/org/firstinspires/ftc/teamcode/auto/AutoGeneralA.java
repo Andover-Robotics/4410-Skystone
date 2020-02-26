@@ -128,15 +128,8 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 
     // Cross Skybridge
     if (crossSkybridgeWithSplines) {
-      drive(t -> t
-          .setReversed(alliance == RED)
-          .splineTo(allianceSpecificPoseFromRed(
-              new Pose2d(-5, -(deliverCrossVariant.absYOffset + 3), heading)))
-          .lineTo(allianceSpecificPositionFromRed(
-              new Vector2d(5, -(deliverCrossVariant.absYOffset + 3))))
-          .splineTo(allianceSpecificPoseFromRed(
-              new Pose2d(depositX, -36, heading))));
-
+      telemetry.speak("not supported because of road runner 0.5.0");
+      while (!isStopRequested()) {}
 
     } else {
       drive(t -> t
@@ -200,8 +193,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
   private void goToQuarryStoneAndLowerSideClaw(BaseTrajectoryBuilder prevTrajectory, int nthFromOutermost) {
     double targetHeading = alliance == RED ? Math.PI : (driveBase.getExternalHeading() < Math.PI ? 0 : 2 * Math.PI);
       Vector2d targetPos = allianceSpecificPositionFromRed(new Vector2d(-24 * 3 + 4.5 + 8 * nthFromOutermost, -34.9));
-    drive(t -> (prevTrajectory == null ? t : prevTrajectory).lineTo(targetPos,
-        new LinearInterpolator(driveBase.getExternalHeading(), targetHeading - driveBase.getExternalHeading())));
+    drive(t -> (prevTrajectory == null ? t : prevTrajectory).lineToLinearHeading(targetPos, targetHeading));
     bot.sideClaw.release();
     sleep(300);
     bot.sideClaw.armDown();
@@ -255,8 +247,8 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     drive(t -> t
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(5, -(deliverCrossVariant.absYOffset + 2))))
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-12, -(deliverCrossVariant.absYOffset + 2))))
-        .lineTo(allianceSpecificPositionFromRed(new Vector2d(-24 * 3 + 8 + 18, -(deliverCrossVariant.absYOffset + 2))),
-            new LinearInterpolator(alliance == RED ? Math.PI : 0, alliance == RED ? Math.PI : 0)));
+        .lineToLinearHeading(
+            allianceSpecificPositionFromRed(new Vector2d(-24 * 3 + 8 + 18, -(deliverCrossVariant.absYOffset + 2))), 0));
     drive(t -> t
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(fieldWallIntakeX, -21))));
     bot.slideSystem.rotateFourBarToGrab();
@@ -270,22 +262,18 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(fieldWallIntakeX, -(deliverCrossVariant.absYOffset + 2)))));
     drive(t -> t
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-10, -(deliverCrossVariant.absYOffset + 2))))
-        .addMarker(() -> {
-          bot.slideSystem.closeClamp();
-          return Unit.INSTANCE;
-        })
+        .addDisplacementMarker(() -> bot.slideSystem.closeClamp())
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(15, -(deliverCrossVariant.absYOffset + 2))))
-        .addMarker(() -> {
-          bot.slideSystem.rotateFourBarToRelease();
-          return Unit.INSTANCE;
-        })
-        .lineTo(allianceSpecificPositionFromRed(new Vector2d(49, -31.5)),
-            new LinearInterpolator(0, allianceSpecificHeadingFromRed(Math.PI / 2))));
+        .addDisplacementMarker(() -> bot.slideSystem.rotateFourBarToRelease())
+        .lineToLinearHeading(allianceSpecificPositionFromRed(new Vector2d(49, -31.5)),
+            allianceSpecificHeadingFromRed(Math.PI / 2)));
 
-    // Release the stone
+    // Release the stone and outtake in case it didn't transfer correctly
     bot.slideSystem.releaseClamp();
+    bot.intake.takeOut(0.6);
     sleep(400);
     bot.slideSystem.rotateFourBarFullyIn();
+    bot.intake.stop();
   }
 
 }
