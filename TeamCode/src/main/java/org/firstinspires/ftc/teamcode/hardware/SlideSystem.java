@@ -48,7 +48,7 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
 
       motorEx.setTargetPosition(0);
       motorEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-      motorEx.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//      motorEx.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
       motorEx.setTargetPositionTolerance(15);
 
       PIDFCoefficients coefficients = motorEx.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
@@ -151,6 +151,7 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
       motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
       motor.setPower(0);
     }
+    liftHeld = false;
   }
 
   public void relayLiftDebugDashboard() {

@@ -139,10 +139,11 @@ public abstract class SkystoneAuto extends LinearOpMode {
     driveBase.followTrajectorySync(new TrajectoryBuilder(driveBase.getPoseEstimate(), new DriveConstraints(
         50, 20, 0, Math.PI/3, Math.PI/6, 0))
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(36, -39)))
-        .lineTo(allianceSpecificPositionFromRed(new Vector2d(22, -44)),
+        .lineTo(allianceSpecificPositionFromRed(new Vector2d(22, -56)),
             new LinearInterpolator(allianceSpecificHeadingFromRed(Math.PI / 2),
-                -allianceSpecificHeadingFromRed(Math.PI / 2)))
+                -allianceSpecificHeadingFromRed(Math.PI / 1.95)))
         .build());
+    driveBase.turnToSync(0);
 
     bot.foundationMover.armUp();
     bot.sideClaw.clamp();

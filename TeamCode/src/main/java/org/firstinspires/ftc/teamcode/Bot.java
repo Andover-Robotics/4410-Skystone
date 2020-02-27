@@ -69,6 +69,7 @@ public class Bot {
         50,
         300
     );
+    driveTrain.setDefaultDrivePower(1.0);
 
     intake = new Intake(
         motor(opMode, "intakeLeft"),

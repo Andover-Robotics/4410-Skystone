@@ -11,6 +11,6 @@ public class LoadSensor {
   }
 
   public boolean stonePresent() {
-    return sensor.getDistance(DistanceUnit.MM) < 300;
+    return sensor.getDistance(DistanceUnit.MM) < 100;
   }
 }

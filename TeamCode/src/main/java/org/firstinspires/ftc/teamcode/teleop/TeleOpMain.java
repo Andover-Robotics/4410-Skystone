@@ -1,9 +1,13 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
 import com.andoverrobotics.core.utilities.Coordinate;
+import com.andoverrobotics.core.utilities.InputColumnResponder;
+import com.andoverrobotics.core.utilities.InputColumnResponderImpl;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Bot;
 import org.openftc.revextensions2.ExpansionHubEx;
@@ -29,6 +33,20 @@ public class TeleOpMain extends OpMode {
     bot.slideSystem.relaxLift();
     hubs = hardwareMap.getAll(LynxModule.class);
     stacker = new Stacker(bot);
+    stackerIcr = new InputColumnResponderImpl();
+    stackerIcr
+        .register(() -> gamepad2.dpad_up, () -> {
+          liftHoldDesired = false;
+          stacker.goToNextLevel();
+        })
+        .register(() -> gamepad2.dpad_down, () -> {
+          liftHoldDesired = false;
+          stacker.goBackToLevelZero();
+        })
+        .register(() -> gamepad2.dpad_right, () -> {
+          liftHoldDesired = false;
+          stacker.goToSameLevel();
+        });
 
     if (bot.mainConfig.getBoolean("useBuiltInBulkRead")) {
       setBulkReadMode(LynxModule.BulkCachingMode.MANUAL);
@@ -124,6 +142,7 @@ public class TeleOpMain extends OpMode {
   }
 
   private boolean lastStatusBusy = false;
+
   private void showLiftStatus() {
     boolean liftBusy = bot.slideSystem.isLiftRunningToPosition();
     if (liftBusy != lastStatusBusy) {
@@ -161,31 +180,44 @@ public class TeleOpMain extends OpMode {
 
   private void adjustDriveSpeed() {
     if (gamepad1.back) {
-      driveSpeed = 0.45;
+      driveSpeed = 0.35;
     } else if (gamepad1.start) {
       driveSpeed = 1;
     }
   }
 
   private boolean intakePulseDesired = false;
+
   private void controlIntakePulse() {
-    if (gamepad1.dpad_down) {
+    if (gamepad1.a) {
       intakePulseDesired = true;
     } else if (bot.loadSensor.stonePresent() || gamepad1.left_trigger > 0.1 || gamepad1.right_trigger > 0.1) {
       intakePulseDesired = false;
     }
 
     if (intakePulseDesired) {
-      bot.intake.pulse(0.4, 0.2, 3.2);
+      bot.intake.pulse(0.4, 0.3, 1.5);
     }
+  }
+
+  private Coordinate getDpadVector(Gamepad g) {
+    int x = 0, y = 0;
+    if (g.dpad_up) y++;
+    if (g.dpad_down) y--;
+    if (g.dpad_right) x++;
+    if (g.dpad_left) x--;
+
+    return Coordinate.fromXY(x, y);
   }
 
   private void driveMovement() {
     Coordinate driveVector = Coordinate.fromXY(gamepad1.left_stick_x, -gamepad1.left_stick_y);
 
     if (useFieldCentric)
-        driveVector = driveVector.rotate(
-            (int) -bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle + fieldCentricDelta);
+      driveVector = driveVector.rotate(
+          (int) -bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle + fieldCentricDelta);
+
+    driveVector = driveVector.add(getDpadVector(gamepad1).scale(0.4));
 
     double microMultiplier = driveSpeed;
     double rotation = gamepad1.right_stick_x * driveSpeed;
@@ -194,11 +226,12 @@ public class TeleOpMain extends OpMode {
       bot.driveTrain.setRotationPower(rotation);
     } else {
       bot.driveTrain.setStrafeRotation(driveVector,
-          driveVector.getPolarDistance() * microMultiplier, rotation);
+          Range.clip(driveVector.getPolarDistance() * microMultiplier, 0, 1), rotation);
     }
   }
 
   private boolean liftHoldDesired = false;
+
   private void automateSimply() {
 
     // left y: lift
@@ -206,7 +239,8 @@ public class TeleOpMain extends OpMode {
       liftHoldDesired = true;
       bot.slideSystem.setLiftPower(-gamepad2.left_stick_y);
     } else if (liftHoldDesired) {
-      bot.slideSystem.holdLiftHeight();
+      // Not necessary for current stringing scheme; might break the key
+//      bot.slideSystem.holdLiftHeight();
     }
     if (gamepad2.right_bumper) {
       bot.slideSystem.relaxLift();
@@ -219,11 +253,9 @@ public class TeleOpMain extends OpMode {
     // right y: clamp
     if (gamepad2.right_stick_y < -0.2) {
       bot.slideSystem.setClampSpeed(-gamepad2.right_stick_y);
-    }
-    else if (gamepad2.right_stick_y > 0.3) {
+    } else if (gamepad2.right_stick_y > 0.3) {
       bot.slideSystem.closeClamp();
-    }
-    else if (gamepad2.back) {
+    } else if (gamepad2.back) {
       bot.slideSystem.releaseClamp();
     }
 
@@ -257,16 +289,9 @@ public class TeleOpMain extends OpMode {
   }
 
   private Stacker stacker;
+  private InputColumnResponder stackerIcr;
+
   private void controlStacker() {
-    if (gamepad2.dpad_down) {
-      liftHoldDesired = false;
-      stacker.goBackToLevelZero();
-    } else if (gamepad2.dpad_up) {
-      liftHoldDesired = false;
-      stacker.goToNextLevel();
-    } else if (gamepad2.dpad_right) {
-      liftHoldDesired = false;
-      stacker.goToSameLevel();
-    }
+    stackerIcr.update();
   }
 }

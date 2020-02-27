@@ -140,8 +140,8 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 
     } else {
       drive(t -> t
-          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-5, -(deliverCrossVariant.absYOffset + 2))))
-          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(5, -(deliverCrossVariant.absYOffset + 2))))
+          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-5, -(deliverCrossVariant.absYOffset + 4))))
+          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(5, -(deliverCrossVariant.absYOffset + 4))))
           .strafeTo(allianceSpecificPositionFromRed(new Vector2d(depositX, -32.5))));
     }
     checkForInterrupt();
@@ -158,7 +158,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     bot.intake.startPulse();
 
     while ((getRuntime() - startTime) * 1000 < timeout && !isStopRequested() && !stop.get()) {
-      bot.intake.pulse(0.35, 0.2, 3);
+      bot.intake.pulse(0.3, 0.2, 2);
     }
 
     bot.intake.stop();
@@ -251,23 +251,24 @@ public abstract class AutoGeneralA extends SkystoneAuto {
   private void deliverFieldWallStone() {
 
     // Go to the stone
-    final int fieldWallIntakeX = -24 * 3 + 8 + 13;
+    final int fieldWallIntakeX = -24 * 3 + 8 + 11;
     drive(t -> t
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(5, -(deliverCrossVariant.absYOffset + 2))))
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-12, -(deliverCrossVariant.absYOffset + 2))))
         .lineTo(allianceSpecificPositionFromRed(new Vector2d(-24 * 3 + 8 + 18, -(deliverCrossVariant.absYOffset + 2))),
             new LinearInterpolator(alliance == RED ? Math.PI : 0, alliance == RED ? Math.PI : 0)));
     drive(t -> t
-        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(fieldWallIntakeX, -21))));
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(fieldWallIntakeX, -23))));
     bot.slideSystem.rotateFourBarToGrab();
 
     // Intake the stone
     driveBase.setDrivePower(new Pose2d(-0.1, 0, 0));
     pulseIntake(3000, () -> bot.loadSensor.stonePresent());
+    bot.intake.takeIn(0.35);
 
     // Go to the foundation
-    bot.slideSystem.rotateFourBarFullyIn();
     drive(t -> t.strafeTo(allianceSpecificPositionFromRed(new Vector2d(fieldWallIntakeX, -(deliverCrossVariant.absYOffset + 2)))));
+    bot.slideSystem.rotateFourBarFullyIn();
     drive(t -> t
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-10, -(deliverCrossVariant.absYOffset + 2))))
         .addMarker(() -> {
@@ -277,6 +278,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(15, -(deliverCrossVariant.absYOffset + 2))))
         .addMarker(() -> {
           bot.slideSystem.rotateFourBarToRelease();
+          bot.intake.takeOut(0.5);
           return Unit.INSTANCE;
         })
         .lineTo(allianceSpecificPositionFromRed(new Vector2d(49, -31.5)),
@@ -284,6 +286,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 
     // Release the stone
     bot.slideSystem.releaseClamp();
+    bot.intake.stop();
     sleep(400);
     bot.slideSystem.rotateFourBarFullyIn();
   }

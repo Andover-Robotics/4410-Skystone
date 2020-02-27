@@ -7,7 +7,7 @@ import org.firstinspires.ftc.teamcode.Bot;
  * Facilitates stacking by memorizing the current level, etc.
  */
 public class Stacker {
-  private static final double TICKS_PER_REV = 537.6;
+  private static final double TICKS_PER_REV = 383.6;
   private static final double LEVEL_HEIGHT = 4, SPOOL_CIRCUMFERENCE = 38 / DistanceUnit.mmPerInch * Math.PI;
 
   // ticks/rev * rev/in = ticks/in
