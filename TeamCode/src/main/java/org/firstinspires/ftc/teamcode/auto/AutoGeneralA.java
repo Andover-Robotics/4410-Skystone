@@ -6,10 +6,7 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.path.heading.LinearInterpolator;
 import com.acmerobotics.roadrunner.trajectory.BaseTrajectoryBuilder;
-import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
-import com.acmerobotics.roadrunner.trajectory.constraints.DriveConstraints;
 import kotlin.Unit;
-import org.firstinspires.ftc.robotcore.external.Predicate;
 import org.firstinspires.ftc.teamcode.teleop.TeleOpMain;
 import org.firstinspires.ftc.teamcode.util.AllianceColor;
 
@@ -101,7 +98,8 @@ public abstract class AutoGeneralA extends SkystoneAuto {
 //      drive(t -> t
 //          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(driveBase.getPoseEstimate().getX(), -parkCrossVariant.absYOffset)))
 //          .strafeTo(allianceSpecificPositionFromRed(new Vector2d(0, -parkCrossVariant.absYOffset))));
-      drive(t -> t.back(30));
+//      drive(t -> t.back(30));
+      parkWithSideClaw();
 
     } catch (Exception interruption) {
       Log.e("Autonomous A", interruption.toString());
@@ -291,4 +289,9 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     bot.slideSystem.rotateFourBarFullyIn();
   }
 
+  private void parkWithSideClaw() {
+    drive(t -> t.lineTo(driveBase.getPoseEstimate().vec().plus(new Vector2d(-15, 0)),
+        new LinearInterpolator(0, -Math.PI / 2))
+        .strafeRight(10));
+  }
 }

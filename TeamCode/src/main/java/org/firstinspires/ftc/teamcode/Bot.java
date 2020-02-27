@@ -44,7 +44,7 @@ public class Bot {
   public final ExpansionHubEx hub1, hub2;
   public final SideClaw sideClaw;
   public final LoadSensor loadSensor;
-  public BNO055IMU imu;
+  public static BNO055IMU imu;
 
   public Configuration mainConfig;
 
@@ -99,12 +99,14 @@ public class Bot {
   }
 
   public void initImu(OpMode opMode) {
-    imu = opMode.hardwareMap.get(BNO055IMU.class, "imu");
-    BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-    parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
-    imu.initialize(parameters);
-    BNO055IMUUtil.remapAxes(imu, AxesOrder.XYZ, AxesSigns.NPN);
-    Log.v("4410-2020 IMU", "Initialized");
+    if (imu == null) {
+      imu = opMode.hardwareMap.get(BNO055IMU.class, "imu");
+      BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+      parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
+      imu.initialize(parameters);
+      BNO055IMUUtil.remapAxes(imu, AxesOrder.XYZ, AxesSigns.NPN);
+      Log.v("4410-2020 IMU", "Initialized");
+    }
   }
 
   // Reduce literal repetition

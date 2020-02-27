@@ -9,6 +9,7 @@ public class UnloadBotDemo extends LinearOpMode {
   @Override
   public void runOpMode() {
     Bot.unloadBot();
+    Bot.imu = null;
     waitForStart();
   }
 }
