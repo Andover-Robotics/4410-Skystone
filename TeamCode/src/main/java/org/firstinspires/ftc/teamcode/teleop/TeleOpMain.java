@@ -116,7 +116,7 @@ public class TeleOpMain extends OpMode {
 
     if (gamepad1.right_stick_button) {
       // Reset field centric (set current heading to human heading)
-      fieldCentricDelta = (int) bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle;
+      fieldCentricDelta = (int) Bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle;
     }
   }
 
@@ -215,7 +215,7 @@ public class TeleOpMain extends OpMode {
 
     if (useFieldCentric)
       driveVector = driveVector.rotate(
-          (int) -bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle + fieldCentricDelta);
+          (int) -Bot.imu.getAngularOrientation().toAngleUnit(AngleUnit.DEGREES).firstAngle + fieldCentricDelta);
 
     driveVector = driveVector.add(getDpadVector(gamepad1).scale(0.4));
 
@@ -235,12 +235,13 @@ public class TeleOpMain extends OpMode {
   private void automateSimply() {
 
     // left y: lift
-    if (Math.abs(gamepad2.left_stick_y) > 0.1) {
+    if (Math.abs(gamepad2.left_stick_y) > 0.05) {
       liftHoldDesired = true;
       bot.slideSystem.setLiftPower(-gamepad2.left_stick_y);
     } else if (liftHoldDesired) {
       // Not necessary for current stringing scheme; might break the key
 //      bot.slideSystem.holdLiftHeight();
+      bot.slideSystem.setLiftPower(0);
     }
     if (gamepad2.right_bumper) {
       bot.slideSystem.relaxLift();

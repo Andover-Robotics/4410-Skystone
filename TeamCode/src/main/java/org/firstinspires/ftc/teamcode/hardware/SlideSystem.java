@@ -76,6 +76,7 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
     for (CachedMotor motor : Arrays.asList(liftLeft, liftRight)) {
       motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
       motor.setTargetPosition(0);
+      motor.getMotor().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
       motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
   }

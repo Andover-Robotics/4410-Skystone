@@ -9,6 +9,7 @@ import org.firstinspires.ftc.teamcode.Bot;
 public class Stacker {
   private static final double TICKS_PER_REV = 383.6;
   private static final double LEVEL_HEIGHT = 4, SPOOL_CIRCUMFERENCE = 38 / DistanceUnit.mmPerInch * Math.PI;
+  private static final int LEVEL_2_TICKS = 150;
 
   // ticks/rev * rev/in = ticks/in
   private static final double kTicksPerLevel = TICKS_PER_REV / SPOOL_CIRCUMFERENCE * LEVEL_HEIGHT;
@@ -25,7 +26,7 @@ public class Stacker {
   }
 
   public void goToNextLevel() {
-    if (level < 9) level++;
+    if (level < 8) level++;
     runToLevel();
   }
 
@@ -39,9 +40,8 @@ public class Stacker {
   }
 
   private void runToLevel() {
-    // To be extra sure, we send two identical commands for redundancy...?
-    bot.slideSystem.setLiftTargetPosition((int) (kTicksPerLevel * level));
-    bot.slideSystem.setLiftTargetPosition((int) (kTicksPerLevel * level));
+    int ticks = ticksForLevel(level);
+    bot.slideSystem.setLiftTargetPosition(ticks);
     bot.slideSystem.runLiftsToTargetPosition(0.9);
 
     if (level == 0) {
@@ -49,5 +49,12 @@ public class Stacker {
     } else {
       bot.slideSystem.rotateFourBarToRelease();
     }
+  }
+
+  private int ticksForLevel(int level) {
+    if (level < 2) {
+      return 0;
+    }
+    return (int) Math.round((level - 2) * kTicksPerLevel + LEVEL_2_TICKS);
   }
 }

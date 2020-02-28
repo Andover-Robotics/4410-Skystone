@@ -28,8 +28,8 @@ public class FoundationMover extends ConfigUser<FoundationMover.ConfigSchema> {
   }
 
   public void armDown() {
-    armLeft.setPosition(convertDegrees(120, config.leftOperatingRange));
-    armRight.setPosition(convertDegrees(120, config.rightOperatingRange));
+    armLeft.setPosition(convertDegrees(170, config.leftOperatingRange));
+    armRight.setPosition(convertDegrees(170, config.rightOperatingRange));
   }
 
 
