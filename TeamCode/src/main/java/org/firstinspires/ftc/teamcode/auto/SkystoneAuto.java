@@ -129,17 +129,17 @@ public abstract class SkystoneAuto extends LinearOpMode {
   protected void repositionFoundation() {
     bot.foundationMover.armUp();
     driveBase.turnToSync(allianceSpecificHeadingFromRed(Math.PI / 2));
-    drive(it -> it.strafeTo(allianceSpecificPositionFromRed(new Vector2d(43, -24))));
+    drive(it -> it.strafeTo(allianceSpecificPositionFromRed(new Vector2d(46, -24))));
     driveBase.setDrivePower(new Pose2d(0.07, 0, 0.02));
     sleep(110);
-    driveBase.setDrivePower(new Pose2d(0.05, 0, allianceSpecificHeadingFromRed(-0.04)));
+    driveBase.setDrivePower(new Pose2d(0.05, 0, allianceSpecificHeadingFromRed(-0.05)));
     bot.foundationMover.armDown();
     sleep(500);
 
     driveBase.followTrajectorySync(new TrajectoryBuilder(driveBase.getPoseEstimate(), new DriveConstraints(
         50, 20, 0, Math.PI/3, Math.PI/6, 0))
-        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(36, -39)))
-        .lineTo(allianceSpecificPositionFromRed(new Vector2d(22, -44)),
+        .strafeTo(allianceSpecificPositionFromRed(new Vector2d(38, -37)))
+        .lineTo(allianceSpecificPositionFromRed(new Vector2d(22, -42)),
             new LinearInterpolator(allianceSpecificHeadingFromRed(Math.PI / 2),
                 -allianceSpecificHeadingFromRed(Math.PI / 2)))
         .build());
@@ -147,7 +147,7 @@ public abstract class SkystoneAuto extends LinearOpMode {
 
     bot.foundationMover.armUp();
     bot.sideClaw.clamp();
-    driveBase.setDrivePower(new Pose2d(0.4, 0));
+    driveBase.setDrivePower(new Pose2d(0.5, 0));
     sleep(700);
   }
 }

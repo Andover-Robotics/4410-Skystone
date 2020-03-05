@@ -110,6 +110,9 @@ public class TeleOpMain extends OpMode {
     telemetry.addData("cycle period", "%d ms", System.currentTimeMillis() - startMillis);
     telemetry.addData("stacker level", "%d", stacker.getLevel());
     telemetry.addData("drive speed", "%.3f", driveSpeed);
+    telemetry.addData("lift positions", "left=%d right=%d",
+        bot.slideSystem.liftLeft.getMotor().getCurrentPosition(),
+        bot.slideSystem.liftRight.getMotor().getCurrentPosition());
     telemetry.addData("current draw 1", bot.hub1.getTotalModuleCurrentDraw(ExpansionHubEx.CurrentDrawUnits.AMPS));
     telemetry.addData("current draw 2", bot.hub2.getTotalModuleCurrentDraw(ExpansionHubEx.CurrentDrawUnits.AMPS));
 
@@ -189,7 +192,7 @@ public class TeleOpMain extends OpMode {
   private boolean intakePulseDesired = false;
 
   private void controlIntakePulse() {
-    if (gamepad1.a) {
+    if (gamepad1.x) {
       intakePulseDesired = true;
     } else if (bot.loadSensor.stonePresent() || gamepad1.left_trigger > 0.1 || gamepad1.right_trigger > 0.1) {
       intakePulseDesired = false;
@@ -235,14 +238,8 @@ public class TeleOpMain extends OpMode {
   private void automateSimply() {
 
     // left y: lift
-    if (Math.abs(gamepad2.left_stick_y) > 0.05) {
-      liftHoldDesired = true;
-      bot.slideSystem.setLiftPower(-gamepad2.left_stick_y);
-    } else if (liftHoldDesired) {
-      // Not necessary for current stringing scheme; might break the key
-//      bot.slideSystem.holdLiftHeight();
-      bot.slideSystem.setLiftPower(0);
-    }
+    bot.slideSystem.setLiftPower(-gamepad2.left_stick_y);
+
     if (gamepad2.right_bumper) {
       bot.slideSystem.relaxLift();
       liftHoldDesired = false;

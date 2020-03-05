@@ -76,6 +76,10 @@ public abstract class MecanumDriveBase extends MecanumDrive {
         return new TrajectoryBuilder(getPoseEstimate(), constraints);
     }
 
+    public TrajectoryBuilder trajectoryBuilder(double heading) {
+        return new TrajectoryBuilder(new Pose2d(getPoseEstimate().vec(), heading), constraints);
+    }
+
     // warning: prefer turnTo in OpModes
     public void turn(double angle) {
         double heading = getPoseEstimate().getHeading();
@@ -158,7 +162,7 @@ public abstract class MecanumDriveBase extends MecanumDrive {
                 double error = Math.abs(AngleUnit.normalizeRadians(currentPose.getHeading()) -
                     AngleUnit.normalizeRadians(turnTarget));
 
-                if (error < Math.toRadians(2) || Math.abs(error - 2*Math.PI) < Math.toRadians(2) ||
+                if (error < Math.toRadians(1.5) || Math.abs(error - 2*Math.PI) < Math.toRadians(1.5) ||
                     NanoClock.system().seconds() - turnStartTime > 6) {
                     setDriveSignal(new DriveSignal());
                     mode = Mode.IDLE;

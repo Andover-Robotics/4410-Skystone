@@ -14,7 +14,8 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
   public static class Config {
     public double slideSpeed;
     public double clampClosedPosition, clampReleasePosition, clampOpenPosition, clampSpeed;
-    public double fourBarFullyInPosition, fourBarFullyOutPosition, fourBarGrabPosition, fourBarReleasePosition, fourBarSpeed;
+    public double fourBarFullyInPosition, fourBarFullyOutPosition,
+        fourBarGrabPosition, fourBarIntermediatePosition, fourBarReleasePosition, fourBarSpeed;
 
     public int ticksPerLevel, intakeLiftHeightTicks, liftLevelOffset;
 
@@ -68,6 +69,7 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
   }
 
   public void setLiftTargetPosition(int target) {
+    target = Range.clip(target, config.liftBottomTicks, config.liftTopTicks);
     liftLeft.setTargetPosition(target);
     liftRight.setTargetPosition(target);
   }
@@ -83,8 +85,11 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
 
   public void setLiftPower(double power) {
     if (willLiftExceedLimitsGivenPower(power)) {
-      relaxLift();
-      return;
+      if (Math.min(liftLeft.getMotor().getCurrentPosition(), liftRight.getMotor().getCurrentPosition()) < config.liftBottomTicks) {
+        power = 0.5;
+      } else {
+        power = -0.4;
+      }
     }
     liftLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     liftRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -132,7 +137,7 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
         leftError = Math.abs(leftPos - liftLeft.getTargetPosition()),
         rightError = Math.abs(rightPos - liftRight.getTargetPosition());
 
-    return Math.max(leftError, rightError) > 50;
+    return Math.max(leftError, rightError) > 30;
   }
 
   private boolean liftHeld = false;
@@ -205,6 +210,10 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
 
   public void rotateFourBarToRelease() {
     fourBar.setPosition(config.fourBarReleasePosition);
+  }
+
+  public void rotateFourBarToIntermediate() {
+    fourBar.setPosition(config.fourBarIntermediatePosition);
   }
 
   public PIDFCoefficients getLiftCoefficients() {

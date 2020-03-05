@@ -44,7 +44,7 @@ public class DriveConstants {
      * angular distances although most angular parameters are wrapped in Math.toRadians() for
      * convenience. Make sure to exclude any gear ratio included in MOTOR_CONFIG from GEAR_RATIO.
      */
-    public static double WHEEL_RADIUS = 1.9;
+    public static double WHEEL_RADIUS = 1.96;
     // 19.2:1s have a max output RPM of 312, whereas the default GoBILDA5202 motor type specifies the max RPM to be 60
     public static double GEAR_RATIO = 312.0 / 60.0; // output (wheel) speed / input (motor) speed
     public static double TRACK_WIDTH = 13.5;
@@ -68,8 +68,8 @@ public class DriveConstants {
      * forces acceleration-limited profiling).
      */
     public static DriveConstraints BASE_CONSTRAINTS = new DriveConstraints(
-            47.0, 40.0, 0.0,
-            Math.toRadians(180.0), Math.toRadians(180.0), 0.0
+            50.0, 45.0, 30.0,
+            Math.toRadians(270.0), Math.toRadians(180.0), 0.0
     );
 
 
