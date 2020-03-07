@@ -36,15 +36,15 @@ public class TeleOpMain extends OpMode {
     stackerIcr = new InputColumnResponderImpl();
     stackerIcr
         .register(() -> gamepad2.dpad_up, () -> {
-          liftHoldDesired = false;
+          liftManualControl = false;
           stacker.goToNextLevel();
         })
         .register(() -> gamepad2.dpad_down, () -> {
-          liftHoldDesired = false;
+          liftManualControl = false;
           stacker.goBackToLevelZero();
         })
         .register(() -> gamepad2.dpad_right, () -> {
-          liftHoldDesired = false;
+          liftManualControl = false;
           stacker.goToSameLevel();
         });
 
@@ -77,7 +77,7 @@ public class TeleOpMain extends OpMode {
   public void start() {
     bot.slideSystem.rotateFourBarToGrab();
     bot.slideSystem.openClamp();
-    bot.sideClaw.armDisabled();
+    bot.sideClaw.armRelease();
   }
 
   @Override
@@ -103,7 +103,7 @@ public class TeleOpMain extends OpMode {
 
     automateSimply();
     controlStacker();
-    bot.slideSystem.relayLiftDebugDashboard();
+//    bot.slideSystem.relayLiftDebugDashboard();
 
     showLiftStatus();
 
@@ -233,19 +233,33 @@ public class TeleOpMain extends OpMode {
     }
   }
 
-  private boolean liftHoldDesired = false;
+  private boolean liftManualControl = true;
 
   private void automateSimply() {
 
     // left y: lift
-    bot.slideSystem.setLiftPower(-gamepad2.left_stick_y);
+    // slow down near bottom
+    boolean nearBottom = bot.slideSystem.minimumLiftTickCount() < 300;
+    if (Math.abs(gamepad2.left_stick_y) > 0.05) {
+      liftManualControl = true;
+      if (nearBottom) {
+        double power = Range.clip(-gamepad2.left_stick_y, -0.2, 0.2);
+        bot.slideSystem.setLiftPower(power);
+      } else {
+        bot.slideSystem.setLiftPower(-gamepad2.left_stick_y);
+      }
+    } else if (liftManualControl) {
+      bot.slideSystem.setLiftPower(0);
+    }
+
+    if (!bot.slideSystem.isLiftRunningToPosition()) liftManualControl = true;
 
     if (gamepad2.right_bumper) {
       bot.slideSystem.relaxLift();
-      liftHoldDesired = false;
-    } else if (gamepad2.left_bumper) {
+      liftManualControl = false;
+    } else if (gamepad2.left_bumper && !bot.slideSystem.isLiftRunningToPosition()) {
       bot.slideSystem.startAligningLiftSets();
-      liftHoldDesired = false;
+      liftManualControl = false;
     }
 
     // right y: clamp
@@ -279,11 +293,13 @@ public class TeleOpMain extends OpMode {
         bot.slideSystem.openClamp();
         bot.slideSystem.startRunningLiftsToBottom();
         bot.slideSystem.rotateFourBarToGrab();
-        liftHoldDesired = false;
+        liftManualControl = false;
       }
     }
 
-    addDiagnosticData("automation", "liftHoldDesired? %s", liftHoldDesired ? "yes" : "no");
+    // Slow down before reaching the bottom
+
+    addDiagnosticData("automation", "liftManualControl? %s", liftManualControl ? "yes" : "no");
   }
 
   private Stacker stacker;

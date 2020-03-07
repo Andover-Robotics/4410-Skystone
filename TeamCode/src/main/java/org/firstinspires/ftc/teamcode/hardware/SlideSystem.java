@@ -49,14 +49,14 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
 
       motorEx.setTargetPosition(0);
       motorEx.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//      motorEx.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+      motorEx.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
       motorEx.setTargetPositionTolerance(15);
 
-      PIDFCoefficients coefficients = motorEx.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
-      motorEx.setPositionPIDFCoefficients(coefficients.p + 1.1);
-
-      coefficients = motorEx.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
-      motorEx.setVelocityPIDFCoefficients(coefficients.p + 0.1, coefficients.i + 0.5, coefficients.d, coefficients.f + 0.2);
+//      PIDFCoefficients coefficients = motorEx.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
+////      motorEx.setPositionPIDFCoefficients(coefficients.p + 1.1);
+//
+//      coefficients = motorEx.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
+//      motorEx.setVelocityPIDFCoefficients(coefficients.p + 0.1, coefficients.i, coefficients.d + 0.3, coefficients.f + 0.2);
     }
   }
 
@@ -86,13 +86,15 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
   public void setLiftPower(double power) {
     if (willLiftExceedLimitsGivenPower(power)) {
       if (Math.min(liftLeft.getMotor().getCurrentPosition(), liftRight.getMotor().getCurrentPosition()) < config.liftBottomTicks) {
-        power = 0.5;
+        power = 0.2;
       } else {
-        power = -0.4;
+        power = -0.1;
       }
     }
     liftLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     liftRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    liftLeft.getMotor().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    liftRight.getMotor().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     liftLeft.setPower(power * config.slideSpeed);
     liftRight.setPower(power * config.slideSpeed);
     liftHeld = false;
@@ -158,6 +160,10 @@ public class SlideSystem extends ConfigUser<SlideSystem.Config> {
       motor.setPower(0);
     }
     liftHeld = false;
+  }
+
+  public int minimumLiftTickCount() {
+    return Math.min(liftLeft.getMotor().getCurrentPosition(), liftRight.getMotor().getCurrentPosition());
   }
 
   public void relayLiftDebugDashboard() {

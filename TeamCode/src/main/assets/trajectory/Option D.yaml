@@ -1,0 +1,20 @@
+---
+startPose:
+  x: -33.0
+  y: -63.0
+  heading: 1.5707963267948966
+startHeading: 0.0
+steps:
+- pose:
+    x: -20.0
+    y: -38.0
+    heading: 0.0
+  heading: 1.5707963267948966
+  interpolationType: "SPLINE"
+- pose:
+    x: 0.0
+    y: -38.0
+    heading: 0.0
+  interpolationType: "CONSTANT"
+resolution: 0.15
+version: 2
