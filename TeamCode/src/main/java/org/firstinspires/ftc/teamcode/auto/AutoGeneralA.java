@@ -39,6 +39,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
       initFields();
       initCV();
       bot.foundationMover.armDown();
+      bot.slideSystem.openClamp();
 
       while (!isStarted()) {
         adjustCvWindow();
@@ -114,8 +115,8 @@ public abstract class AutoGeneralA extends SkystoneAuto {
     bot.sideClaw.clamp();
     goToQuarryStoneAndLowerSideClaw(trajectoryBeforeGo, nthStoneFromWall);
     sleep(250);
-    driveBase.setDrivePower(new Pose2d(0, -0.25));
-    sleep(550);
+    driveBase.setDrivePower(new Pose2d(0, -0.22));
+    sleep(660);
     bot.sideClaw.clamp();
     sleep(450);
     driveBase.setDrivePower(new Pose2d(0, 0));
@@ -197,9 +198,9 @@ public abstract class AutoGeneralA extends SkystoneAuto {
   }
 
   private void goToQuarryStoneAndLowerSideClaw(BaseTrajectoryBuilder prevTrajectory, int nthFromOutermost) {
-    final double stoneXOffset = alliance == RED ? 9 : 3.5;
+    final double stoneXOffset = alliance == RED ? 9 : 2.5;
     double targetHeading = alliance == RED ? Math.PI : (driveBase.getExternalHeading() < Math.PI ? 0 : 2 * Math.PI);
-      Vector2d targetPos = allianceSpecificPositionFromRed(new Vector2d(-24 * 3 + stoneXOffset + 7.96 * nthFromOutermost, -35.3));
+    Vector2d targetPos = allianceSpecificPositionFromRed(new Vector2d(-24 * 3 + stoneXOffset + 7.92 * nthFromOutermost, -36.1));
     drive(t -> (prevTrajectory == null ? t : prevTrajectory).lineTo(targetPos,
         new LinearInterpolator(driveBase.getExternalHeading(), targetHeading - driveBase.getExternalHeading())));
     bot.sideClaw.release();
@@ -251,7 +252,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
   private void deliverFieldWallStone() {
 
     // Go to the stone
-    final double fieldWallIntakeX = -24 * 3 + 8 + 12;
+    final double fieldWallIntakeX = -24 * 3 + 8 + 10.5;
     drive(t -> t
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(5, -(deliverCrossVariant.absYOffset + 2))))
         .strafeTo(allianceSpecificPositionFromRed(new Vector2d(-12, -(deliverCrossVariant.absYOffset + 2))))
@@ -295,7 +296,7 @@ public abstract class AutoGeneralA extends SkystoneAuto {
   private void parkWithSideClaw() {
     bot.sideClaw.release();
     bot.sideClaw.armDown();
-    drive(t -> t.lineTo(driveBase.getPoseEstimate().vec().plus(new Vector2d(-17, alliance == RED ? 1 : -3)),
+    drive(t -> t.lineTo(driveBase.getPoseEstimate().vec().plus(new Vector2d(-19, alliance == RED ? 1 : -12)),
         new LinearInterpolator(0, -Math.PI / 2)));
     sleep(600);
   }

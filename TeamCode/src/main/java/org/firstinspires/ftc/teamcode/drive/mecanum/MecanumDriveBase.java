@@ -15,6 +15,7 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.acmerobotics.roadrunner.trajectory.constraints.DriveConstraints;
 import com.acmerobotics.roadrunner.trajectory.constraints.MecanumConstraints;
+import com.acmerobotics.roadrunner.util.Angle;
 import com.acmerobotics.roadrunner.util.NanoClock;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -32,7 +33,7 @@ import static org.firstinspires.ftc.teamcode.drive.DriveConstants.*;
 @Config
 public abstract class MecanumDriveBase extends MecanumDrive {
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(3.5, 0.2, 0);
-    public static PIDCoefficients HEADING_PID = new PIDCoefficients(4.5, 0.2, 0.0);//2.3 0.25 0.55
+    public static PIDCoefficients HEADING_PID = new PIDCoefficients(4.5, 0.5, 0.0);//2.3 0.25 0.55
 
     public enum Mode {
         IDLE,
@@ -159,11 +160,12 @@ public abstract class MecanumDriveBase extends MecanumDrive {
                         0, 0, correction
                 )));
 
-                double error = Math.abs(AngleUnit.normalizeRadians(currentPose.getHeading()) -
-                    AngleUnit.normalizeRadians(turnTarget));
+//                double error = Math.abs(AngleUnit.normalizeRadians(currentPose.getHeading()) -
+//                    AngleUnit.normalizeRadians(turnTarget));
+                double error = Angle.normDelta(currentPose.getHeading() - turnTarget);
 
-                if (error < Math.toRadians(1.5) || Math.abs(error - 2*Math.PI) < Math.toRadians(1.5) ||
-                    NanoClock.system().seconds() - turnStartTime > 6) {
+                if (error < Math.toRadians(3) ||
+                    NanoClock.system().seconds() - turnStartTime > 4.5) {
                     setDriveSignal(new DriveSignal());
                     mode = Mode.IDLE;
                 }
